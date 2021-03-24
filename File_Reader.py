@@ -35,4 +35,4 @@ class FileReader:
 
 # f = FileReader("./test.txt")
 # while f.get_next_char() != 'eof':
-#     print(f.cur_char, f.look_ahead, f.lineno)
+#      print(f.cur_char, f.look_ahead, f.lineno)
