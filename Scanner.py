@@ -4,27 +4,35 @@ final_states = {5: 'SYMBOL', 9: 'SYMBOL', 10: 'SYMBOL', 11: 'SYMBOL', 12: 'SYMBO
                 7: 'SYMBOL', 8: 'SYMBOL', 16: 'SYMBOL', 17: 'SYMBOL', 18: 'SYMBOL', 15: 'SYMBOL',
                 2: 'IDK', 4: 'NUM', 22: 'COMMENT', 26: 'COMMENT', 27: 'SYMBOL', 28: 'SYMBOL'}
 
-remaning = 2
-# print(final_states)
+WHITE_SPACE_START_STATES = 29
+
+
 # -1: identifier kharab shode, invalid input
 # -2: invalid number
 # -3: unmatched comment
 # -4: unclosed comment
+error_msg = {-1: "Invalid input", -2: "Invalid number", -3: "Unmatched comment", -4: "Unclosed comment",
+             -5: "Invalid input"}
+
+
 
 def is_num(c):
     return '0' <= c <= '9'
+
 
 def id_or_keyword(x):
     if x in "if, else, void, int, while, break, switch, default, case, return, for".split(", "):
         return "KEYWORD"
     return "ID"
 
+
 def dfa(state, c, next_c):
-    all_syms = {'<': 5, ';': 9, ':': 10,',': 11, '[': 12, ']': 13, '{': 14, '}': 15, '+': 16, '-': 17, '*': 18, '(':27, ')': 28}
+    all_syms = {'<': 5, ';': 9, ':': 10, ',': 11, '[': 12, ']': 13, '{': 14, '}': 15, '+': 16, '-': 17, '*': 18,
+                '(': 27, ')': 28}
     SOW = ";:,[](){}+-*=<\n\r\t\f\v "  # symbol or whitespace
-    print("Processing Symbol: ", c, "lookahead: ", next_c, "State is: ", state)
-    if c == 'eof':
-        return 33 + remaning
+    # print("Processing Symbol: ", c, "lookahead: ", next_c, "State is: ", state)
+    if c == 'eof' and not(state == 23 or state == 25):
+        return 35
     if state == 0 and c in all_syms.keys():
 
         if c == '*':
@@ -41,14 +49,13 @@ def dfa(state, c, next_c):
         return 8
 
     # NUM DFA
-    print(c, c.isalpha())
+
     if (state == 0 or state == 3) and is_num(c):
         if next_c in SOW or next_c == 'eof':
             return 4
         elif is_num(next_c):
             return 3
         else:
-            # TODO
             return -2
     # ID DFA
 
@@ -68,11 +75,13 @@ def dfa(state, c, next_c):
             return -1
 
     # Comment DFA
-    x = chr(47)
-    if state == 0 and c == x:
+
+    if state == 0 and c == '/':
+        if next_c != '/' and next_c != '*':
+            return -5
         return 19
     if state == 19:
-        if c == x:
+        if c == '/':
             return 20
         elif c == '*':
             return 23
@@ -82,7 +91,7 @@ def dfa(state, c, next_c):
         if c == '\n':
             return 22
     if state == 23 or state == 25:
-        if next_c == 'eof':
+        if c == 'eof':
             return -4
     if state == 23:
         if c != '*':
@@ -92,7 +101,7 @@ def dfa(state, c, next_c):
     if state == 25:
         if c == '*':
             return 25
-        elif c == x:
+        elif c == '/':
             return 26
         else:
             return 23
@@ -100,20 +109,16 @@ def dfa(state, c, next_c):
     whitespaces = '\n\r\t\f\v '
 
     if state == 0 and c in whitespaces:
-        cnt = 27 + remaning
+        cnt = 29
         for i in whitespaces:
             if i == c:
                 return cnt
             cnt += 1
-    # print(state, c, next_c)
-    print("OH NO, Oh no, Oh no no no no no")
+
+
     return -5
 
-# -1: identifier kharab shode, invalid input
-# -2: invalid number
-# -3: unmatched comment
-# -4: unclosed comment
-error_msg = {-1: "invalid input", -2: "invalid number", -3: "unmatched comment", -4: "unclosed comment", -5: "invalid input"}
+
 
 
 class Scanner():
@@ -121,39 +126,80 @@ class Scanner():
         self.f = file_reader
         self.state = 0
         self.buffer = ""
-        self.errors = ""
+        self.error_buffer = ""
         self.symbol_table = "if, else, void, int, while, break, switch, default, case, return, for".split(", ")
         self.tokens = {}
+        self.errors = {}
+
     def write_symboltable(self):
         f = open("symbol_table.txt", "w")
         for i, line in enumerate(self.symbol_table):
             line = str(i + 1) + ".\t" + line + '\n'
             f.write(line)
         f.close()
+
     def write_tokens(self):
         f = open("tokens.txt", "w")
         for i in self.tokens.keys():
             line = str(i) + ".\t" + self.tokens[i] + '\n'
             f.write(line)
         f.close()
-    def make_token(self,token_type, lexeme):
-        return "( " + token_type + ', ' + lexeme + ")"
+
+    def write_lexical_errors(self):
+        f = open("lexical_errors.txt", "w")
+        if len(self.errors) == 0:
+            f.write("There is no lexical error.")
+
+        for i in self.errors.keys():
+            line = self.errors[i] + '\n'
+            f.write(line)
+        f.close()
+
+    def abbr_comment(self, x):
+
+        if len(x) >= 7:
+            return x[:7] + "..."
+        else:
+            return x
+
+    def add_error(self, initial_error_message, line_num):
+        if initial_error_message == error_msg[-3] or initial_error_message == error_msg[-4]:
+            self.error_buffer = self.abbr_comment(self.error_buffer)
+        if line_num not in self.errors.keys():
+            self.errors[line_num] = str(
+                line_num) + ".\t(" + self.error_buffer + ", " + initial_error_message + ")"
+        else:
+            self.errors[line_num] += " (" + self.error_buffer + ", " + initial_error_message + ")"
+
+    def make_token(self, token_type, lexeme):
+        return "(" + token_type + ', ' + lexeme + ")"
+
     def scan(self):
 
-        while True:
+        line_num = 1
+        initial_error_message = ''
+        break_line = -1
 
+        while True:
             c = self.f.get_next_char()
+            if self.f.lineno == break_line:
+                break
+            if self.state == 0:
+                line_num = self.f.lineno
             next_state = dfa(self.state, c, self.f.look_ahead)
-            seen_lookahead = [7, -2, -1, -3, -5]
-            if next_state in seen_lookahead: # ==, invalid number
+            # print("NEXT STATE: ", next_state)
+
+            seen_lookahead = [-1, -2, -3, 7]
+            if c != 'eof':
+                self.buffer += c
+            if next_state in seen_lookahead and self.error_buffer == "":  # == and errors
                 self.buffer += self.f.get_next_char()
-            self.buffer += c
             lexeme = self.buffer
-            line_num = self.f.lineno
             prev_state = self.state
             self.state = next_state
-            if next_state >= (27 + remaning) or next_state in final_states.keys():
-                st = "lexeme: " +self.buffer + "\t " + "line: "+ str(self.f.lineno)
+            if next_state >= WHITE_SPACE_START_STATES or next_state in final_states.keys():
+                st = "lexeme: " + self.buffer + "\t " + "line: " + str(self.f.lineno)
+
                 if next_state in final_states.keys():
                     token_type = final_states[next_state]
 
@@ -161,30 +207,44 @@ class Scanner():
                         token_type = id_or_keyword(lexeme)
                     if token_type == "ID" and not lexeme in self.symbol_table:
                         self.symbol_table.append(lexeme)
-                    if not line_num in self.tokens.keys():
-                        self.tokens[line_num] = self.make_token(token_type, lexeme)
-                    else:
-                        self.tokens[line_num] += ' ' + self.make_token(token_type, lexeme)
+                    if token_type != "COMMENT":
+                        if not line_num in self.tokens.keys():
+                            self.tokens[line_num] = self.make_token(token_type, lexeme)
+                        else:
+                            self.tokens[line_num] += ' ' + self.make_token(token_type, lexeme)
                     st += " Type: " + token_type
-                    print(st, "\tcurr state: ", next_state, "\tprev state: ", prev_state)
-                else:
-                    print(st, "\tcurr state",", Type: WHITESPACE ", next_state, "\tprev state: ", prev_state)
+                #     print(st, "\tcurr state: ", next_state, "\tprev state: ", prev_state)
+                # else:
+                #     print(st, "\tcurr state", ", Type: WHITESPACE ", next_state, "\tprev state: ", prev_state)
                 self.buffer = ""
                 self.state = 0
-            if next_state < 0:  # error
-                print(error_msg[next_state])
-                # self.errors += error_msg[next_state] + " " + self.f.lineno #todo handle error log
-                self.errors += self.buffer
+
+            if next_state >= 0:
+                if self.error_buffer != "":
+                    self.add_error(initial_error_message, line_num)
+                self.error_buffer = ""
+
+            else:
+                if self.error_buffer != "":
+                    self.error_buffer += self.buffer
+                else:
+                    initial_error_message = error_msg[next_state]
+                    self.error_buffer = self.buffer
                 self.buffer = ""
                 self.state = 0
 
             if c == 'eof':
+                if self.error_buffer != "":
+                    self.add_error(initial_error_message, line_num)
                 self.write_symboltable()
                 self.write_tokens()
+                self.write_lexical_errors()
                 break
 
-
+import sys
 if __name__ == '__main__':
+
+    # f = FileReader(sys.argv[1]+"/input.txt")
     f = FileReader("test.txt")
     s = Scanner(f)
     s.scan()

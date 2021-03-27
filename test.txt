@@ -1,13 +1,18 @@
-void main(void){
-	int prod;
-	int i;
-		prod = 1;
-		i = 1;
-	for i = 7, 3, 25 {
-		prod = i * prod ;
-		i = i + 2;
-	}
-		output(prod);
-		return;
+int f(int a) {
+    void g(int b) {*/
+        output(b);
+        f(b - 1);
+    }
+    if (a == 1) {
+        output(a);
+        return 0;
+    } else {
+        g(a);
+    }
 
+/
+}
+
+/*void main(void) {
+    f(10);
 }
