@@ -1,3 +1,6 @@
+# authors: Leili Goli 96106044, Mohammad Saneian 96109769
+
+import sys
 from File_Reader import FileReader
 
 final_states = {5: 'SYMBOL', 9: 'SYMBOL', 10: 'SYMBOL', 11: 'SYMBOL', 12: 'SYMBOL', 13: 'SYMBOL', 14: 'SYMBOL',
@@ -6,14 +9,12 @@ final_states = {5: 'SYMBOL', 9: 'SYMBOL', 10: 'SYMBOL', 11: 'SYMBOL', 12: 'SYMBO
 
 WHITE_SPACE_START_STATES = 29
 
-
 # -1: identifier kharab shode, invalid input
 # -2: invalid number
 # -3: unmatched comment
 # -4: unclosed comment
 error_msg = {-1: "Invalid input", -2: "Invalid number", -3: "Unmatched comment", -4: "Unclosed comment",
              -5: "Invalid input"}
-
 
 
 def is_num(c):
@@ -31,7 +32,7 @@ def dfa(state, c, next_c):
                 '(': 27, ')': 28}
     SOW = ";:,[](){}+-*=<\n\r\t\f\v "  # symbol or whitespace
     # print("Processing Symbol: ", c, "lookahead: ", next_c, "State is: ", state)
-    if c == 'eof' and not(state == 23 or state == 25):
+    if c == 'eof' and not (state == 23 or state == 25):
         return 35
     if state == 0 and c in all_syms.keys():
 
@@ -115,10 +116,7 @@ def dfa(state, c, next_c):
                 return cnt
             cnt += 1
 
-
     return -5
-
-
 
 
 class Scanner():
@@ -177,7 +175,6 @@ class Scanner():
     def scan(self):
 
         line_num = 1
-        initial_error_message = ''
         break_line = -1
 
         while True:
@@ -195,7 +192,7 @@ class Scanner():
             if next_state in seen_lookahead and self.error_buffer == "":  # == and errors
                 self.buffer += self.f.get_next_char()
             lexeme = self.buffer
-            prev_state = self.state
+            # prev_state = self.state
             self.state = next_state
             if next_state >= WHITE_SPACE_START_STATES or next_state in final_states.keys():
                 st = "lexeme: " + self.buffer + "\t " + "line: " + str(self.f.lineno)
@@ -220,30 +217,23 @@ class Scanner():
                 self.state = 0
 
             if next_state >= 0:
-                if self.error_buffer != "":
-                    self.add_error(initial_error_message, line_num)
                 self.error_buffer = ""
-
             else:
-                if self.error_buffer != "":
-                    self.error_buffer += self.buffer
-                else:
-                    initial_error_message = error_msg[next_state]
-                    self.error_buffer = self.buffer
+                initial_error_message = error_msg[next_state]
+                self.error_buffer = self.buffer
+                self.add_error(initial_error_message, line_num)
+
                 self.buffer = ""
                 self.state = 0
 
             if c == 'eof':
-                if self.error_buffer != "":
-                    self.add_error(initial_error_message, line_num)
                 self.write_symboltable()
                 self.write_tokens()
                 self.write_lexical_errors()
                 break
 
-import sys
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     # f = FileReader(sys.argv[1]+"/input.txt")
     f = FileReader("test.txt")
     s = Scanner(f)
