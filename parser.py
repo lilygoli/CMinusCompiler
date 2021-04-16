@@ -42,18 +42,20 @@ follow = get_dictionary("follow_sets")
 
 
 class Parser():
-    def __init__(self, scanner):
+    def __init__(self, scanner, start):
         self.scanner = scanner
         self.line_number = 0
         self.cur_token = ''
+        self.cur_value = ''
         self.get_next_token()
+        self.cur_father_node = start
 
     def get_next_token(self):
-        self.cur_token = self.scanner.get_next_token()
+        self.cur_token, self.cur_value = self.scanner.get_next_token()
         self.line_number = self.scanner.f.lineno
 
-    def add_edge(self, a, b):
-        Node(b, parent=a)
+    def add_edge(self, b):
+        return Node(b, parent=self.cur_father_node)
 
     def print_error_follow(self, name):
         print("missing" + name + " in line " + self.line_number)
@@ -63,20 +65,28 @@ class Parser():
 
     def match(self, expected):
         if self.cur_token == expected:
+            Node(self.cur_value, parent=self.cur_father_node)
             self.get_next_token()
         else:
             print("missing "+ expected + " in line "+ self.line_number)
 
+    def go_next_level(self, func, name):
+        node = self.add_edge(name)
+        prev_node = self.cur_father_node
+        self.cur_father_node = node
+        func()
+        self.cur_father_node = prev_node
+
     def Program(self):
         LA = self.cur_token
         if LA in first["Program"]:
-            self.add_edge("Declaration_list", "Program")
-            self.Declaration_list()
+            self.go_next_level(self.Declaration_list, "Declaration_list")
         elif LA in follow["Program"]:
             self.print_error_follow("Program")
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
+            self.Program()
 
     def Declaration_list(self):
         pass
@@ -84,6 +94,6 @@ class Parser():
 
 f = FileReader("test.txt")
 s = Scanner(f)
-p = Parser(s)
-Node("Program")
+root = Node("Program")
+p = Parser(s, root)
 p.Program()
