@@ -92,8 +92,13 @@ class Parser():
         pass
 
 
-f = FileReader("test.txt")
-s = Scanner(f)
-root = Node("Program")
-p = Parser(s, root)
-p.Program()
+if __name__ == '__main__':
+    f = FileReader("test.txt")
+    s = Scanner(f)
+    # next = ''
+    # while next != "$":
+    #     next = s.get_next_token()[0]
+
+    root = Node("Program")
+    p = Parser(s, root)
+    p.Program()
