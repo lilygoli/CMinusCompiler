@@ -175,18 +175,17 @@ class Scanner():
     def get_next_token(self):
 
         line_num = 1
-        break_line = -1
+        # break_line = -1
         token_value, lexeme = 'sasa', 'lily'
-        next_state = 0
+
         while True:
             c = self.f.get_next_char()
             # print("char, ", c)
-            if self.f.lineno == break_line:
-                break
+            # if self.f.lineno == break_line:
+            #     break
             if self.state == 0:
                 line_num = self.f.lineno
             next_state = dfa(self.state, c, self.f.look_ahead)
-            # print("NEXT STATE: ", next_state)
 
             seen_lookahead = [-1, -2, -3, 7]
             if c != 'eof':
@@ -194,16 +193,14 @@ class Scanner():
             else:
                 break
 
-            if next_state in seen_lookahead and self.error_buffer == "":  # == and errors
+            if next_state in seen_lookahead:  # == and errors
                 self.buffer += self.f.get_next_char()
             lexeme = self.buffer
-            prev_state = self.state
             self.state = next_state
-            if next_state < 0:
-                break
+
+            go_next = False
             if next_state >= WHITE_SPACE_START_STATES or next_state in final_states.keys():
 
-                # st = "lexeme: " + self.buffer + "\t " + "line: " + str(self.f.lineno)
                 if next_state in final_states.keys():
 
                     token_type = final_states[next_state]
@@ -219,38 +216,31 @@ class Scanner():
                             self.tokens[line_num] = self.make_token(token_type, lexeme)
                         else:
                             self.tokens[line_num] += ' ' + self.make_token(token_type, lexeme)
-                        break
-                    else:
-
-                        self.buffer = ""
-                        self.state = 0
-                        return self.get_next_token()
-                    # st += " Type: " + token_type
-                    # print(st, "\tcurr state: ", next_state, "\tprev state: ", prev_state)
-                # else:
-                #     print(st, "\tcurr state", ", Type: WHITESPACE ", next_state, "\tprev state: ", prev_state)
+                        go_next = True
                 self.buffer = ""
                 self.state = 0
 
-        self.state = 0
-        if next_state >= 0:
-            self.error_buffer = ""
+            if next_state >= 0:
+                self.error_buffer = ""
 
-        else:
-            initial_error_message = error_msg[next_state]
-            self.error_buffer = self.buffer
-            self.add_error(initial_error_message, line_num)
-            self.buffer = ""
-            return self.get_next_token()
+            else:
+                initial_error_message = error_msg[next_state]
+                self.error_buffer = self.buffer
+                self.add_error(initial_error_message, line_num)
+                self.buffer = ""
+                self.state = 0
+            if go_next:
+                break
 
-        self.buffer = ""
+
+
         if c == 'eof':
             self.write_symboltable()
             self.write_tokens()
             self.write_lexical_errors()
             lexeme = "$"
             token_value = ''
-        # print("SCANNER OUTPUT: ", lexeme, token_value)
+        print("SCANNER OUTPUT: ", lexeme, token_value)
         return lexeme, token_value
 
 

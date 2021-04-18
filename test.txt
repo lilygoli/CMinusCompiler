@@ -1,17 +1,24 @@
-void main ( void ) {
-    int a = 0;
-    // comment1
-    a = 2 + 2;
-    a = a - 3;
-    cde = a;
-    if (b /* comment2 */ == 3d) {
-        a = 3;
-        cd!e = 7;
-    }
-    else */
-    {
-        b = a < cde;
-        {cde = @2;
-    }}
-    return;/* comment 3
+void min(void){
+	for int j0; 1&&2: 90){
+		output(\v);
+	}
+	\\
+	12\\3ai
+	switch (arr[g]){
+		case 2:
+			b ===== b + 1; //
+		case< 3:
+			b = b + 2;
+			return;
+		case 4:,--][;;;
+		{*** <<>>
+			x = 5;::
+			b = u * 123;
+			break;}
+		default:/*this is not wrong */
+			b = b - 1;
+	}
+	return;
 }
+/'*/
+bar=/* what a strange place to put a comment in */*then
