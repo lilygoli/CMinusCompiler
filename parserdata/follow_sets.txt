@@ -2,7 +2,7 @@ $	ID	;	[	NUM	];	(	)	int	void	,	]	{	}	break	if	else	while	return	for	=	<	==	+	-	*
 Program	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	+
 Declarationlist	+	+	+	−	+	−	+	−	−	−	−	−	+	+	+	+	−	+	+	+	−	−	−	+	+	−	−
 Declaration	+	+	+	−	+	−	+	−	+	+	−	−	+	+	+	+	−	+	+	+	−	−	−	+	+	−	−
-Declarationinitial	−	−	+	+	−	−	+	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−
+Declarationinitial	−	−	+	+	−	−	+	+	−	−	+	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−
 Declarationprime	+	+	+	−	+	−	+	−	+	+	−	−	+	+	+	+	−	+	+	+	−	−	−	+	+	−	−
 Vardeclarationprime	+	+	+	−	+	−	+	−	+	+	−	−	+	+	+	+	−	+	+	+	−	−	−	+	+	−	−
 Fundeclarationprime	+	+	+	−	+	−	+	−	+	+	−	−	+	+	+	+	−	+	+	+	−	−	−	+	+	−	−
@@ -12,7 +12,6 @@ Paramlistvoidabtar	−	−	−	−	−	−	−	+	−	−	−	−	−	−	−	−
 Paramlist	−	−	−	−	−	−	−	+	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−
 Param	−	−	−	−	−	−	−	+	−	−	+	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−
 Paramprime	−	−	−	−	−	−	−	+	−	−	+	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−
-Paramprim	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−	−
 Compoundstmt	+	+	+	−	+	−	+	−	+	+	−	−	+	+	+	+	+	+	+	+	−	−	−	+	+	−	−
 Statementlist	−	−	−	−	−	−	−	−	−	−	−	−	−	+	−	−	−	−	−	−	−	−	−	−	−	−	−
 Statement	−	+	+	−	+	−	+	−	−	−	−	−	+	+	+	+	+	+	+	+	−	−	−	+	+	−	−

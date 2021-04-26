@@ -30,8 +30,6 @@ def get_dictionary(file_name):
 
 first = get_dictionary("first_sets")
 follow = get_dictionary("follow_sets")
-
-
 # lili_command = ["B", "H", "Statement", "Statementlist"]
 #
 # for i in lili_command:
@@ -71,6 +69,7 @@ class Parser():
         else:
             print(f"#{self.line_number}  : Syntax Error, Missing Params")
 
+
     def go_next_level(self, func, name):
         node = self.add_edge(name)
         prev_node = self.cur_father_node
@@ -101,11 +100,10 @@ class Parser():
             self.print_error_illegal(LA)
             self.get_next_token()
             self.Declarationlist()
-
     def Declaration(self):
         LA = self.cur_token
         if LA in first["Declaration"]:
-            self.go_next_level(self.Declarationinitial, "Declaration-initial")
+            self.go_next_level(self.Declarationinitial , "Declaration-initial")
             self.go_next_level(self.Declarationprime, "Declaration-prime")
         elif LA in follow["Program"]:
             self.print_error_follow("Declaration")
@@ -113,6 +111,298 @@ class Parser():
             self.print_error_illegal(LA)
             self.get_next_token()
             self.Declaration()
+    def Declarationinitial(self):
+        LA = self.cur_token
+        if LA in first["Declarationinitial"]:
+            self.go_next_level(self.Typespecifier, "Type-specifier")
+            self.match("ID")
+        elif LA in follow["Declarationinitial"]:
+            self.print_error_follow("Declaration-initial")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Declarationinitial()
+    def Declarationprime(self):
+        LA = self.cur_token
+        if LA in ['(']:
+            self.go_next_level(self.Fundeclarationprime, "Fun-declaration-prime")
+        elif LA in first["Declarationprime"]:
+            self.go_next_level(self.Vardeclarationprime, "Var-declaration-prime")
+        elif LA in follow["Declarationprime"]:
+            self.print_error_follow("Declaration-prime")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Declarationprime()
+    def Vardeclarationprime(self):
+        LA = self.cur_token
+        if LA in [';']:
+            self.match(';')
+        elif LA in ['[']:
+            self.match('[')
+            self.match('NUM')
+            self.match(']')
+            self.match(';')
+        elif LA in follow["Vardeclarationprime"]:
+            self.print_error_follow("Var-declaration-prime")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Vardeclarationprime()
+    def Fundeclarationprime(self):
+        LA = self.cur_token
+        if LA in first["Fundeclarationprime"]:
+            self.match('(')
+            self.go_next_level(self.Params, "Params")
+            self.match(')')
+            self.go_next_level(self.Compoundstmt, "Compound-stmt")
+        elif LA in follow["Fundeclarationprime"]:
+            self.print_error_follow("Fun-declaration-prime")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Fundeclarationprime()
+
+    def Typespecifier(self):
+        LA = self.cur_token
+        if LA in first["Typespecifier"]:
+            self.match(LA)
+        elif LA in follow["Typespecifier"]:
+            self.print_error_follow("Type-specifier")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Typespecifier()
+    def Params(self):
+        LA = self.cur_token
+        if LA in ['int']:
+            self.match('int')
+            self.match('ID')
+            self.go_next_level(self.Paramprime, "Param-prime")
+            self.go_next_level(self.Paramlist, "Param-list")
+        elif LA in ['void']:
+            self.match('void')
+            self.go_next_level(self.Paramlistvoidabtar, "Param-list-void-abtar")
+        elif LA in follow["Params"]:
+            self.print_error_follow("Params")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Params()
+
+    def Paramlistvoidabtar(self):
+        LA = self.cur_token
+        if LA in ['ID']:
+            self.match('ID')
+            self.go_next_level(self.Paramprime, "Param-prime")
+            self.go_next_level(self.Paramlist, "Param-list")
+        elif LA in follow["Paramlistvoidabtar"]:
+            # epsilon in first
+            return
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Params()
+    def Paramlist(self):
+        LA = self.cur_token
+        if LA in [',']:
+            self.match(',')
+            self.go_next_level(self.Param, "Param")
+            self.go_next_level(self.Paramlist, "Param-list")
+        elif LA in follow["Paramlist"]:
+            self.print_error_follow("Type-specifier")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Paramlist()
+    def Param(self):
+        LA = self.cur_token
+        if LA in first['Param']:
+            self.go_next_level(self.Declarationinitial, "Declaration-initial")
+            self.go_next_level(self.Paramprime, "Param-prime")
+        elif LA in follow["Param"]:
+            self.print_error_follow("Param")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Param()
+    def Paramprime(self):
+        LA = self.cur_token
+        if LA in first['Paramprime']:
+            self.match('[')
+            self.match(']')
+        elif LA in follow["Paramprime"]:
+            # epsilon in first
+            return
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Paramprime()
+    def Compoundstmt(self):
+        LA = self.cur_token
+        if LA in first['Compoundstmt']:
+            self.match('{')
+            self.go_next_level(self.DeclarationlistStatementlist, "Declaration-list Statement-list")
+            self.match('}')
+        elif LA in follow["Compoundstmt"]:
+            self.print_error_follow("Compound-stmt")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Compoundstmt()
+    def Statementlist(self):
+        LA = self.cur_token
+        if LA in first['Statementlist']:
+            self.go_next_level(self.Statement, "Statement")
+            self.go_next_level(self.Statementlist, "Statement-list")
+        elif LA in follow["Statementlist"]:
+            # epsilon in first
+            return
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Statementlist()
+
+    def Statement(self):
+        LA = self.cur_token
+        if LA in ['{']:
+            self.go_next_level(self.Compoundstmt, "Compound-stmt")
+        elif LA in ['if']:
+            self.go_next_level(self.Selectionstmt, "Selection-stmt")
+        elif LA in ['while']:
+            self.go_next_level(self.Iterationstmt, "Iteration-stmt")
+        elif LA in ['return']:
+            self.go_next_level(self.Returnstmt, "Return-stmt")
+        elif LA in ['for']:
+            self.go_next_level(self.Forstmt, "For-stmt")
+        elif LA in first['Statement']:
+            self.go_next_level(self.Expressionstmt, "Expression-stmt")
+        elif LA in follow['Statement']:
+            self.print_error_follow("Statement")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Statement()
+    def Expressionstmt(self):
+        LA = self.cur_token
+        if LA in first['break']:
+            self.match('break')
+            self.match(';')
+        elif LA in [';']:
+            self.match(';')
+        elif LA in first['Expressionstmt']:
+            self.go_next_level(self.Expression, "Expression")
+            self.match(';')
+        elif LA in follow['Expressionstmt']:
+            self.print_error_follow('Expression-stmt')
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Expressionstmt()
+    def Selectionstmt(self):
+        LA = self.cur_token
+        if LA in first['Selectionstmt']:
+            self.match('if')
+            self.match('(')
+            self.go_next_level(self.Expression, "Expression")
+            self.match(')')
+            self.go_next_level(self.Statement, "Statement")
+            self.match('else')
+            self.go_next_level(self.Statement, "Statement")
+        elif LA in follow['Selectionstmt']:
+            self.print_error_follow('Selection-stmt')
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Selectionstmt()
+    def Iterationstmt(self):
+        LA = self.cur_token
+        if LA in first['Iterationstmt']:
+            self.match('while')
+            self.match('(')
+            self.go_next_level(self.Expression, "Expression")
+            self.match(')')
+            self.go_next_level(self.Statement, "Statement")
+        elif LA in follow['Iterationstmt']:
+            self.print_error_follow('Iteration-stmt')
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Iterationstmt()
+    def Returnstmt(self):
+        LA = self.cur_token
+        if LA in first['Returnstmt']:
+            self.match('return')
+            self.go_next_level(self.Returnstmtprime, "Return-stmt-prime")
+        elif LA in follow['Returnstmt']:
+            self.print_error_follow('Return-stmt')
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Returnstmt()
+    def Returnstmtprime(self):
+        LA = self.cur_token
+        if LA in [';']:
+            self.match(';')
+        elif LA in first['Returnstmtprime']:
+            self.go_next_level(self.Expression, "Expression")
+            self.match(';')
+        elif LA in follow['Returnstmtprime']:
+            self.print_error_follow('Return-stmt-prime')
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Returnstmtprime()
+    def Forstmt(self):
+        LA = self.cur_token
+        if LA in first['Forstmt']:
+            self.match('for')
+            self.match('ID')
+            self.match('=')
+            self.go_next_level(self.Vars, "Vars")
+            self.go_next_level(self.Statement, "Statement")
+        elif LA in follow['Forstmt']:
+            self.print_error_follow('For-stmt')
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Forstmt()
+    def Vars(self):
+        LA = self.cur_token
+        if LA in first['Vars']:
+            self.go_next_level(self.Var, "Var")
+            self.go_next_level(self.Varzegond, "Var-zegond")
+        elif LA in follow['Vars']:
+            self.print_error_follow('Vars')
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Vars()
+    def Varzegond(self):
+        LA = self.cur_token
+        if LA in first['Varzegond']:
+            self.match(',')
+            self.go_next_level(self.Var, "Var")
+            self.go_next_level(self.Varzegond, "Var-zegond")
+        elif LA in follow['Varzegond']:
+            # epsilon in first
+            return
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Varzegond()
+    def Var(self):
+        LA = self.cur_token
+        if LA in first['Var']:
+            self.match('ID')
+            self.go_next_level(self.Varprime, "Var-prime")
+        elif LA in follow['Var']:
+            self.print_error_follow("Var")
+            return
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Var()
 
     def Expression(self):
         LA = self.cur_token
@@ -294,7 +584,7 @@ class Parser():
             self.go_next_level(self.Signedfactorprime, "Signed-factor-prime")
             self.go_next_level(self.G, "G")
         elif LA in follow["Termprime"]:
-           return
+            return
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -481,16 +771,17 @@ class Parser():
             self.get_next_token()
             self.Arglistprime()
 
-def give_googooli(x):
-    print("first of " + x + " is: ")
-    print(first[x])
-    print("follow of " + x + " is: ")
-    print(follow[x])
+
+# def give_googooli(x):
+#     print("first of " + x + " is: ")
+#     print(first[x])
+#     print("follow of " + x + " is: ")
+#     print(follow[x])
+# x = 'Expression'
+#
+# give_googooli(x)
 
 
-x = 'Arglistprime'
-
-give_googooli(x)
 if __name__ == '__main__':
     f = FileReader("test.txt")
     s = Scanner(f)
