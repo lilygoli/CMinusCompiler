@@ -58,17 +58,18 @@ class Parser():
         return Node(b, parent=self.cur_father_node)
 
     def print_error_follow(self, name):
-        print("missing" + name + " in line " + self.line_number)
+        print(f"#{self.line_number}  : syntax error, missing {name}")
 
     def print_error_illegal(self, LA):
-        print("illegal" + LA + " in line " + self.line_number)
+        print(f"#{self.line_number} : syntax error, illegal {LA}")
 
     def match(self, expected):
         if self.cur_token == expected:
             Node(self.cur_value, parent=self.cur_father_node)
             self.get_next_token()
         else:
-            print("missing "+ expected + " in line "+ self.line_number)
+            print(f"#{self.line_number}  : Syntax Error, Missing Params")
+
 
     def go_next_level(self, func, name):
         node = self.add_edge(name)
@@ -80,7 +81,7 @@ class Parser():
     def Program(self):
         LA = self.cur_token
         if LA in first["Program"]:
-            self.go_next_level(self.Declaration_list, "Declaration_list")
+            self.go_next_level(self.Declarationlist, "Declaration-list")
         elif LA in follow["Program"]:
             self.print_error_follow("Program")
         else:
@@ -88,10 +89,42 @@ class Parser():
             self.get_next_token()
             self.Program()
 
-    def Declaration_list(self):
+    def Declarationlist(self):
+        LA = self.cur_token
+        if LA in ['int', 'void']:
+            self.go_next_level(self.Declaration, "Declaration")
+            self.go_next_level(self.Declarationlist, "Declaration-list")
+        elif LA in follow["Program"]:
+            # epsilon in first
+            return
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Declarationlist()
+    def Declaration(self):
+        LA = self.cur_token
+        if LA in first["Declaration"]:
+            self.go_next_level(self.Declarationinitial , "Declaration-initial")
+            self.go_next_level(self.Declarationprime, "Declaration-prime")
+        elif LA in follow["Program"]:
+            self.print_error_follow("Declaration")
+        else:
+            self.print_error_illegal(LA)
+            self.get_next_token()
+            self.Declaration()
+    def Statement(self):
+        pass
+    def Compoundstmt(self):
         pass
 
+def give_googooli(x):
+    print("first of " + x + " is: ")
+    print(first[x])
+    print("follow of " + x + " is: ")
+    print(follow[x])
+x = 'Statement'
 
+give_googooli(x)
 if __name__ == '__main__':
     f = FileReader("test.txt")
     s = Scanner(f)

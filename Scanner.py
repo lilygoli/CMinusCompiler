@@ -243,7 +243,7 @@ class Scanner():
             self.write_lexical_errors()
             lexeme = "$"
             token_value = ''
-        print("SCANNER OUTPUT: ", lexeme, token_value)
+        #print("SCANNER OUTPUT: ", lexeme, token_value)
         return lexeme, token_value
 
 
