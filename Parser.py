@@ -48,9 +48,14 @@ class Parser():
         self.cur_value = ''
         self.get_next_token()
         self.cur_father_node = start
+        self.root = start
 
     def get_next_token(self):
         self.cur_token, self.cur_value = self.scanner.get_next_token()
+        if '(ID,' in self.cur_value:
+            self.cur_token = 'ID'
+        if 'NUM, ' in self.cur_value:
+            self.cur_token = 'NUM'
         self.line_number = self.scanner.f.lineno
 
     def add_edge(self, b):
@@ -69,10 +74,17 @@ class Parser():
         else:
             print(f"#{self.line_number}  : Syntax Error, Missing Params")
 
+    def epsilon_child(self):
+        Node("epsilon", parent=self.cur_father_node)
 
     def go_next_level(self, func, name):
+        #print("IN THE GO NEXT LEVEL")
+
         node = self.add_edge(name)
+        #print("node: ", node)
         prev_node = self.cur_father_node
+        #print("my father: ", self.cur_father_node)
+
         self.cur_father_node = node
         func()
         self.cur_father_node = prev_node
@@ -80,8 +92,10 @@ class Parser():
     def Program(self):
         LA = self.cur_token
         if LA in first["Program"]:
+            #print("injam")
             self.go_next_level(self.Declarationlist, "Declaration-list")
         elif LA in follow["Program"]:
+            #print("unjam")
             self.print_error_follow("Program")
         else:
             self.print_error_illegal(LA)
@@ -90,11 +104,16 @@ class Parser():
 
     def Declarationlist(self):
         LA = self.cur_token
+        print("here: ", LA)
+        print(first['Declarationlist'])
+        print(follow['Declarationlist'])
         if LA in ['int', 'void']:
+            print("injam")
             self.go_next_level(self.Declaration, "Declaration")
             self.go_next_level(self.Declarationlist, "Declaration-list")
-        elif LA in follow["Program"]:
-            # epsilon in first
+        elif LA in follow["Declarationlist"]:
+            self.epsilon_child()
+            print("unjam")
             return
         else:
             self.print_error_illegal(LA)
@@ -115,7 +134,7 @@ class Parser():
         LA = self.cur_token
         if LA in first["Declarationinitial"]:
             self.go_next_level(self.Typespecifier, "Type-specifier")
-            self.match("ID")
+            self.match(self.cur_token)
         elif LA in follow["Declarationinitial"]:
             self.print_error_follow("Declaration-initial")
         else:
@@ -177,7 +196,7 @@ class Parser():
         LA = self.cur_token
         if LA in ['int']:
             self.match('int')
-            self.match('ID')
+            self.match(self.cur_token)
             self.go_next_level(self.Paramprime, "Param-prime")
             self.go_next_level(self.Paramlist, "Param-list")
         elif LA in ['void']:
@@ -193,11 +212,11 @@ class Parser():
     def Paramlistvoidabtar(self):
         LA = self.cur_token
         if LA in ['ID']:
-            self.match('ID')
+            self.match(self.cur_token)
             self.go_next_level(self.Paramprime, "Param-prime")
             self.go_next_level(self.Paramlist, "Param-list")
         elif LA in follow["Paramlistvoidabtar"]:
-            # epsilon in first
+            self.epsilon_child()
             return
         else:
             self.print_error_illegal(LA)
@@ -232,7 +251,7 @@ class Parser():
             self.match('[')
             self.match(']')
         elif LA in follow["Paramprime"]:
-            # epsilon in first
+            self.epsilon_child()
             return
         else:
             self.print_error_illegal(LA)
@@ -242,7 +261,8 @@ class Parser():
         LA = self.cur_token
         if LA in first['Compoundstmt']:
             self.match('{')
-            self.go_next_level(self.DeclarationlistStatementlist, "Declaration-list Statement-list")
+            self.go_next_level(self.Declarationlist, "Declaration-list ")
+            self.go_next_level(self.Statementlist ,"Statement-list")
             self.match('}')
         elif LA in follow["Compoundstmt"]:
             self.print_error_follow("Compound-stmt")
@@ -256,7 +276,7 @@ class Parser():
             self.go_next_level(self.Statement, "Statement")
             self.go_next_level(self.Statementlist, "Statement-list")
         elif LA in follow["Statementlist"]:
-            # epsilon in first
+            self.epsilon_child()
             return
         else:
             self.print_error_illegal(LA)
@@ -285,7 +305,7 @@ class Parser():
             self.Statement()
     def Expressionstmt(self):
         LA = self.cur_token
-        if LA in first['break']:
+        if LA in ['break']:
             self.match('break')
             self.match(';')
         elif LA in [';']:
@@ -357,7 +377,7 @@ class Parser():
         LA = self.cur_token
         if LA in first['Forstmt']:
             self.match('for')
-            self.match('ID')
+            self.match(self.cur_token)
             self.match('=')
             self.go_next_level(self.Vars, "Vars")
             self.go_next_level(self.Statement, "Statement")
@@ -385,7 +405,7 @@ class Parser():
             self.go_next_level(self.Var, "Var")
             self.go_next_level(self.Varzegond, "Var-zegond")
         elif LA in follow['Varzegond']:
-            # epsilon in first
+            self.epsilon_child()
             return
         else:
             self.print_error_illegal(LA)
@@ -394,7 +414,7 @@ class Parser():
     def Var(self):
         LA = self.cur_token
         if LA in first['Var']:
-            self.match('ID')
+            self.match(self.cur_token)
             self.go_next_level(self.Varprime, "Var-prime")
         elif LA in follow['Var']:
             self.print_error_follow("Var")
@@ -409,7 +429,7 @@ class Parser():
         if LA in ['NUM', '(', '+', '-']:
             self.go_next_level(self.Simpleexpressionzegond, "Simple-expression-zegond")
         elif LA in ['ID']:
-            self.match('ID')
+            self.match(self.cur_token)
             self.go_next_level(self.B, "B")
         elif LA in follow["Expression"]:
             self.print_error_follow("Expression")
@@ -431,7 +451,7 @@ class Parser():
         elif LA in ['(', '<', '==', '+', '-', '*']:
             self.go_next_level(self.Simpleexpressionprime, "Simple-expression-prime")
         elif LA in follow["B"]:
-            return
+            self.go_next_level(self.Simpleexpressionprime, "Simple-expression-prime")
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -442,12 +462,10 @@ class Parser():
         if LA in ['=']:
             self.match('=')
             self.go_next_level(self.Expression, "Expression")
-        elif LA in ['<', '==', '+', '-', '*']:
+        elif LA in ['<', '==', '+', '-', '*'] or LA in follow["H"]:
             self.go_next_level(self.G, "G")
             self.go_next_level(self.D, "D")
             self.go_next_level(self.C, "C")
-        elif LA in follow["H"]:
-            return
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -471,9 +489,9 @@ class Parser():
         if LA in first["Simpleexpressionzegond"]:
             self.go_next_level(self.Additiveexpressionprime, "Additive-expression-prime")
             self.go_next_level(self.C, "C")
-
         elif LA in follow["Simpleexpressionprime"]:
-            self.print_error_follow("Simple-expression-prime")
+            self.go_next_level(self.Additiveexpressionprime, "Additive-expression-prime")
+            self.go_next_level(self.C, "C")
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -486,7 +504,7 @@ class Parser():
             self.go_next_level(self.Additiveexpression, "Additive-expression")
 
         elif LA in follow["C"]:
-            return
+            self.epsilon_child()
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -523,7 +541,8 @@ class Parser():
             self.go_next_level(self.Termprime, "Term-prime")
             self.go_next_level(self.D, "D")
         elif LA in follow["Additiveexpressionprime"]:
-            return
+            self.go_next_level(self.Termprime, "Term-prime")
+            self.go_next_level(self.D, "D")
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -548,7 +567,7 @@ class Parser():
             self.go_next_level(self.Term, "Term")
             self.go_next_level(self.D, "D")
         elif LA in follow["D"]:
-            return
+            self.epsilon_child()
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -556,8 +575,9 @@ class Parser():
 
     def Addop(self):
         LA = self.cur_token
-        if LA in ['+', '-']:
+        if LA in ['+']:
             self.match('+')
+        elif LA in ['-']:
             self.match('-')
         elif LA in follow["Addop"]:
             self.print_error_follow("Addop")
@@ -584,7 +604,8 @@ class Parser():
             self.go_next_level(self.Signedfactorprime, "Signed-factor-prime")
             self.go_next_level(self.G, "G")
         elif LA in follow["Termprime"]:
-            return
+            self.go_next_level(self.Signedfactorprime, "Signed-factor-prime")
+            self.go_next_level(self.G, "G")
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -609,7 +630,7 @@ class Parser():
             self.go_next_level(self.Signedfactor, "Signed-factor")
             self.go_next_level(self.G, "G")
         elif LA in follow["G"]:
-            return
+            self.epsilon_child()
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -637,7 +658,7 @@ class Parser():
         if LA in ['(']:
             self.go_next_level(self.Factorprime, "Factor-prime")
         elif LA in follow["Signedfactorprime"]:
-            return
+            self.go_next_level(self.Factorprime, "Factor-prime")
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -663,7 +684,7 @@ class Parser():
     def Factor(self):
         LA = self.cur_token
         if LA in ['ID']:
-            self.match('ID')
+            self.match(self.cur_token)
             self.go_next_level(self.Varcallprime, "Var-call-prime")
         elif LA in ['(']:
             self.match('(')
@@ -687,7 +708,7 @@ class Parser():
         elif LA in ['[']:
             self.go_next_level(self.Varprime, "Var-prime")
         elif LA in follow["Varcallprime"]:
-            return
+            self.go_next_level(self.Varprime, "Var-prime")
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -701,7 +722,7 @@ class Parser():
             self.match(']')
 
         elif LA in follow["Varprime"]:
-            return
+            self.epsilon_child()
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -714,7 +735,7 @@ class Parser():
             self.go_next_level(self.Args, "Args")
             self.match(')')
         elif LA in follow["Factorprime"]:
-            return
+            self.epsilon_child()
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -740,7 +761,7 @@ class Parser():
         if LA in ['ID', 'NUM', '(', '+', '-']:
             self.go_next_level(self.Arglist, "Arg-list")
         elif LA in follow["Args"]:
-            return
+            self.epsilon_child()
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -765,7 +786,7 @@ class Parser():
             self.go_next_level(self.Expression, "Expression")
             self.go_next_level(self.Arglistprime, "Arg-list-prime")
         elif LA in follow["Arglistprime"]:
-            return
+            self.epsilon_child()
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -780,15 +801,23 @@ class Parser():
 # x = 'Expression'
 #
 # give_googooli(x)
-
+for i in first.keys():
+    if "ε" in first[i]:
+        print(i)
 
 if __name__ == '__main__':
     f = FileReader("test.txt")
     s = Scanner(f)
-    next = ''
-    while next != "$":
-        next = s.get_next_token()[0]
+    # next = ''
+    # while next != "$":
+    #     next = s.get_next_token()[0]
 
-    # root = Node("Program")
-    # p = Parser(s, root)
-    # p.Program()
+    root = Node("Program")
+    p = Parser(s, root)
+    p.Program()
+    for pre, fill, node in RenderTree(p.root):
+        print("%s%s" % (pre, node.name))
+    #Node("$", parrent=p.root)
+    p.add_edge("$")
+    for pre, fill, node in RenderTree(p.root):
+        print("%s%s" % (pre, node.name))

@@ -252,3 +252,4 @@ if __name__ == '__main__':
     f = FileReader("test.txt")
     s = Scanner(f)
     s.get_next_token()
+
