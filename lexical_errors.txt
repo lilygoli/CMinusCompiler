@@ -1,6 +1,0 @@
-2.	(1&, Invalid number) (&, Invalid input)
-3.	(\, Invalid input)
-5.	(\, Invalid input) (\, Invalid input)
-6.	(12\, Invalid number) (\, Invalid input) (3a, Invalid number)
-14.	(>, Invalid input) (>, Invalid input)
-23.	(/, Invalid input) (', Invalid input) (*/, Unmatched comment)

@@ -188,10 +188,14 @@ class Scanner():
             next_state = dfa(self.state, c, self.f.look_ahead)
 
             seen_lookahead = [-1, -2, -3, 7]
+            flag = False
             if c != 'eof':
                 self.buffer += c
             else:
-                break
+                if next_state != -4:
+                    break
+                else:
+                    flag = True
 
             if next_state in seen_lookahead:  # == and errors
                 self.buffer += self.f.get_next_char()
@@ -212,7 +216,7 @@ class Scanner():
                     if token_type != "COMMENT":
 
                         token_value = self.make_token(token_type, lexeme)
-                        if not line_num in self.tokens.keys():
+                        if line_num not in self.tokens.keys():
                             self.tokens[line_num] = self.make_token(token_type, lexeme)
                         else:
                             self.tokens[line_num] += ' ' + self.make_token(token_type, lexeme)
@@ -229,9 +233,8 @@ class Scanner():
                 self.add_error(initial_error_message, line_num)
                 self.buffer = ""
                 self.state = 0
-            if go_next:
+            if go_next or flag:
                 break
-
 
 
         if c == 'eof':
