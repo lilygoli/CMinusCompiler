@@ -1,3 +1,5 @@
+#authors: Mohammad Saneian 96109769 Leili Goli 96106044
+
 from File_Reader import FileReader
 from Scanner import Scanner
 from anytree import Node, RenderTree
@@ -30,14 +32,6 @@ def get_dictionary(file_name):
 
 first = get_dictionary("first_sets")
 follow = get_dictionary("follow_sets")
-# lili_command = ["B", "H", "Statement", "Statementlist"]
-#
-# for i in lili_command:
-#     print(i, "__________")
-#     print("first set is")
-#     print(first[i])
-#     print("follow set is")
-#     print(follow[i])
 
 
 class Parser():
@@ -49,6 +43,7 @@ class Parser():
         self.get_next_token()
         self.cur_father_node = start
         self.root = start
+        self.errors = ''
 
     def get_next_token(self):
         self.cur_token, self.cur_value = self.scanner.get_next_token()
@@ -61,30 +56,47 @@ class Parser():
     def add_edge(self, b):
         return Node(b, parent=self.cur_father_node)
 
+    def remove_node(self):
+        parent = self.cur_father_node.parent
+        children = list(parent.children)
+        children.remove(self.cur_father_node)
+        parent.children = children
+
+    def write_string(self, f, string):
+        f = open(f, "w")
+        f.write(string)
+        f.close()
+
     def print_error_follow(self, name):
-        print(f"#{self.line_number}  : syntax error, missing {name}")
+       self.errors += f"#{self.line_number}  : syntax error, missing {name}\n"
 
     def print_error_illegal(self, LA):
-        print(f"#{self.line_number} : syntax error, illegal {LA}")
+        if LA == "$":
+            self.remove_node()
+            self.errors += f"#{self.line_number} : syntax error, unexpected EOF\n"
+            tree = ''
+            for pre, fill, node in RenderTree(self.root): #write to file
+                tree += "%s%s\n" % (pre, node.name)
+            self.write_string("syntax_errors.txt", self.errors)
+            self.write_string("parse_tree.txt", tree)
+            exit()
+        else:
+            self.errors += f"#{self.line_number} : syntax error, illegal {LA}\n"
+
 
     def match(self, expected):
         if self.cur_token == expected:
             Node(self.cur_value, parent=self.cur_father_node)
             self.get_next_token()
         else:
-            print(f"#{self.line_number}  : Syntax Error, Missing Params")
+            self.errors += f"#{self.line_number}  : syntax error, missing {expected}\n"
 
     def epsilon_child(self):
         Node("epsilon", parent=self.cur_father_node)
 
     def go_next_level(self, func, name):
-        #print("IN THE GO NEXT LEVEL")
-
         node = self.add_edge(name)
-        #print("node: ", node)
         prev_node = self.cur_father_node
-        #print("my father: ", self.cur_father_node)
-
         self.cur_father_node = node
         func()
         self.cur_father_node = prev_node
@@ -92,10 +104,9 @@ class Parser():
     def Program(self):
         LA = self.cur_token
         if LA in first["Program"]:
-            #print("injam")
             self.go_next_level(self.Declarationlist, "Declaration-list")
         elif LA in follow["Program"]:
-            #print("unjam")
+            self.remove_node()
             self.print_error_follow("Program")
         else:
             self.print_error_illegal(LA)
@@ -104,16 +115,14 @@ class Parser():
 
     def Declarationlist(self):
         LA = self.cur_token
-        print("here: ", LA)
-        print(first['Declarationlist'])
-        print(follow['Declarationlist'])
+
         if LA in ['int', 'void']:
-            print("injam")
+
             self.go_next_level(self.Declaration, "Declaration")
             self.go_next_level(self.Declarationlist, "Declaration-list")
         elif LA in follow["Declarationlist"]:
             self.epsilon_child()
-            print("unjam")
+
             return
         else:
             self.print_error_illegal(LA)
@@ -124,7 +133,8 @@ class Parser():
         if LA in first["Declaration"]:
             self.go_next_level(self.Declarationinitial , "Declaration-initial")
             self.go_next_level(self.Declarationprime, "Declaration-prime")
-        elif LA in follow["Program"]:
+        elif LA in follow["Declaration"]:
+            self.remove_node()
             self.print_error_follow("Declaration")
         else:
             self.print_error_illegal(LA)
@@ -136,6 +146,7 @@ class Parser():
             self.go_next_level(self.Typespecifier, "Type-specifier")
             self.match(self.cur_token)
         elif LA in follow["Declarationinitial"]:
+            self.remove_node()
             self.print_error_follow("Declaration-initial")
         else:
             self.print_error_illegal(LA)
@@ -148,6 +159,7 @@ class Parser():
         elif LA in first["Declarationprime"]:
             self.go_next_level(self.Vardeclarationprime, "Var-declaration-prime")
         elif LA in follow["Declarationprime"]:
+            self.remove_node()
             self.print_error_follow("Declaration-prime")
         else:
             self.print_error_illegal(LA)
@@ -163,6 +175,7 @@ class Parser():
             self.match(']')
             self.match(';')
         elif LA in follow["Vardeclarationprime"]:
+            self.remove_node()
             self.print_error_follow("Var-declaration-prime")
         else:
             self.print_error_illegal(LA)
@@ -176,6 +189,7 @@ class Parser():
             self.match(')')
             self.go_next_level(self.Compoundstmt, "Compound-stmt")
         elif LA in follow["Fundeclarationprime"]:
+            self.remove_node()
             self.print_error_follow("Fun-declaration-prime")
         else:
             self.print_error_illegal(LA)
@@ -187,6 +201,7 @@ class Parser():
         if LA in first["Typespecifier"]:
             self.match(LA)
         elif LA in follow["Typespecifier"]:
+            self.remove_node()
             self.print_error_follow("Type-specifier")
         else:
             self.print_error_illegal(LA)
@@ -203,6 +218,7 @@ class Parser():
             self.match('void')
             self.go_next_level(self.Paramlistvoidabtar, "Param-list-void-abtar")
         elif LA in follow["Params"]:
+            self.remove_node()
             self.print_error_follow("Params")
         else:
             self.print_error_illegal(LA)
@@ -221,7 +237,7 @@ class Parser():
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
-            self.Params()
+            self.Paramlistvoidabtar()
     def Paramlist(self):
         LA = self.cur_token
         if LA in [',']:
@@ -229,7 +245,7 @@ class Parser():
             self.go_next_level(self.Param, "Param")
             self.go_next_level(self.Paramlist, "Param-list")
         elif LA in follow["Paramlist"]:
-            self.print_error_follow("Type-specifier")
+            self.epsilon_child()
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
@@ -240,6 +256,7 @@ class Parser():
             self.go_next_level(self.Declarationinitial, "Declaration-initial")
             self.go_next_level(self.Paramprime, "Param-prime")
         elif LA in follow["Param"]:
+            self.remove_node()
             self.print_error_follow("Param")
         else:
             self.print_error_illegal(LA)
@@ -265,6 +282,7 @@ class Parser():
             self.go_next_level(self.Statementlist ,"Statement-list")
             self.match('}')
         elif LA in follow["Compoundstmt"]:
+            self.remove_node()
             self.print_error_follow("Compound-stmt")
         else:
             self.print_error_illegal(LA)
@@ -298,6 +316,7 @@ class Parser():
         elif LA in first['Statement']:
             self.go_next_level(self.Expressionstmt, "Expression-stmt")
         elif LA in follow['Statement']:
+            self.remove_node()
             self.print_error_follow("Statement")
         else:
             self.print_error_illegal(LA)
@@ -314,6 +333,7 @@ class Parser():
             self.go_next_level(self.Expression, "Expression")
             self.match(';')
         elif LA in follow['Expressionstmt']:
+            self.remove_node()
             self.print_error_follow('Expression-stmt')
         else:
             self.print_error_illegal(LA)
@@ -330,6 +350,7 @@ class Parser():
             self.match('else')
             self.go_next_level(self.Statement, "Statement")
         elif LA in follow['Selectionstmt']:
+            self.remove_node()
             self.print_error_follow('Selection-stmt')
         else:
             self.print_error_illegal(LA)
@@ -344,6 +365,7 @@ class Parser():
             self.match(')')
             self.go_next_level(self.Statement, "Statement")
         elif LA in follow['Iterationstmt']:
+            self.remove_node()
             self.print_error_follow('Iteration-stmt')
         else:
             self.print_error_illegal(LA)
@@ -355,6 +377,7 @@ class Parser():
             self.match('return')
             self.go_next_level(self.Returnstmtprime, "Return-stmt-prime")
         elif LA in follow['Returnstmt']:
+            self.remove_node()
             self.print_error_follow('Return-stmt')
         else:
             self.print_error_illegal(LA)
@@ -368,6 +391,7 @@ class Parser():
             self.go_next_level(self.Expression, "Expression")
             self.match(';')
         elif LA in follow['Returnstmtprime']:
+            self.remove_node()
             self.print_error_follow('Return-stmt-prime')
         else:
             self.print_error_illegal(LA)
@@ -382,6 +406,7 @@ class Parser():
             self.go_next_level(self.Vars, "Vars")
             self.go_next_level(self.Statement, "Statement")
         elif LA in follow['Forstmt']:
+            self.remove_node()
             self.print_error_follow('For-stmt')
         else:
             self.print_error_illegal(LA)
@@ -393,6 +418,7 @@ class Parser():
             self.go_next_level(self.Var, "Var")
             self.go_next_level(self.Varzegond, "Var-zegond")
         elif LA in follow['Vars']:
+            self.remove_node()
             self.print_error_follow('Vars')
         else:
             self.print_error_illegal(LA)
@@ -417,6 +443,7 @@ class Parser():
             self.match(self.cur_token)
             self.go_next_level(self.Varprime, "Var-prime")
         elif LA in follow['Var']:
+            self.remove_node()
             self.print_error_follow("Var")
             return
         else:
@@ -432,6 +459,7 @@ class Parser():
             self.match(self.cur_token)
             self.go_next_level(self.B, "B")
         elif LA in follow["Expression"]:
+            self.remove_node()
             self.print_error_follow("Expression")
         else:
             self.print_error_illegal(LA)
@@ -478,15 +506,17 @@ class Parser():
             self.go_next_level(self.C, "C")
 
         elif LA in follow["Simpleexpressionzegond"]:
+            self.remove_node()
             self.print_error_follow("Simple-expression-zegond")
         else:
             self.print_error_illegal(LA)
             self.get_next_token()
             self.Simpleexpressionzegond()
 
-    def Simpleexpressionprime(self):
+    def Simpleexpressionprime(self): #here
         LA = self.cur_token
-        if LA in first["Simpleexpressionzegond"]:
+
+        if LA in first["Simpleexpressionprime"]:
             self.go_next_level(self.Additiveexpressionprime, "Additive-expression-prime")
             self.go_next_level(self.C, "C")
         elif LA in follow["Simpleexpressionprime"]:
@@ -517,6 +547,7 @@ class Parser():
         elif LA in ['==']:
             self.match('==')
         elif LA in follow["Relop"]:
+            self.remove_node()
             self.print_error_follow("Relop")
         else:
             self.print_error_illegal(LA)
@@ -529,6 +560,7 @@ class Parser():
             self.go_next_level(self.Term, "Term")
             self.go_next_level(self.D, "D")
         elif LA in follow["Additiveexpression"]:
+            self.remove_node()
             self.print_error_follow("Additive-expression")
         else:
             self.print_error_illegal(LA)
@@ -554,6 +586,7 @@ class Parser():
             self.go_next_level(self.Termzegond, "Term-zegond")
             self.go_next_level(self.D, "D")
         elif LA in follow["Additiveexpressionzegond"]:
+            self.remove_node()
             self.print_error_follow("Additive-expression-zegond")
         else:
             self.print_error_illegal(LA)
@@ -580,6 +613,7 @@ class Parser():
         elif LA in ['-']:
             self.match('-')
         elif LA in follow["Addop"]:
+            self.remove_node()
             self.print_error_follow("Addop")
         else:
             self.print_error_illegal(LA)
@@ -592,6 +626,7 @@ class Parser():
             self.go_next_level(self.Signedfactor, "Signed-factor")
             self.go_next_level(self.G, "G")
         elif LA in follow["Term"]:
+            self.remove_node()
             self.print_error_follow("Term")
         else:
             self.print_error_illegal(LA)
@@ -617,6 +652,7 @@ class Parser():
             self.go_next_level(self.Signedfactorzegond, "Signed-factor-zegond")
             self.go_next_level(self.G, "G")
         elif LA in follow["Termzegond"]:
+            self.remove_node()
             self.print_error_follow("Term-zegond")
         else:
             self.print_error_illegal(LA)
@@ -630,6 +666,7 @@ class Parser():
             self.go_next_level(self.Signedfactor, "Signed-factor")
             self.go_next_level(self.G, "G")
         elif LA in follow["G"]:
+
             self.epsilon_child()
         else:
             self.print_error_illegal(LA)
@@ -647,6 +684,7 @@ class Parser():
         elif LA in ['ID', 'NUM', '(']:
             self.go_next_level(self.Factor, "Factor")
         elif LA in follow["Signedfactor"]:
+            self.remove_node()
             self.print_error_follow("Signed-factor")
         else:
             self.print_error_illegal(LA)
@@ -675,6 +713,7 @@ class Parser():
         elif LA in ['NUM', '(']:
             self.go_next_level(self.Factorzegond, "Factor-zegond")
         elif LA in follow["Signedfactorzegond"]:
+            self.remove_node()
             self.print_error_follow("Signed-factor-zegond")
         else:
             self.print_error_illegal(LA)
@@ -693,6 +732,7 @@ class Parser():
         elif LA in ['NUM']:
             self.match('NUM')
         elif LA in follow["Factor"]:
+            self.remove_node()
             self.print_error_follow("Factor")
         else:
             self.print_error_illegal(LA)
@@ -750,6 +790,7 @@ class Parser():
         elif LA in ['NUM']:
             self.match('NUM')
         elif LA in follow["Factorzegond"]:
+            self.remove_node()
             self.print_error_follow("Factor-zegond")
         else:
             self.print_error_illegal(LA)
@@ -773,6 +814,7 @@ class Parser():
             self.go_next_level(self.Expression, "Expression")
             self.go_next_level(self.Arglistprime, "Arg-list-prime")
         elif LA in follow["Arglist"]:
+            self.remove_node()
             self.print_error_follow("Arg-list")
         else:
             self.print_error_illegal(LA)
@@ -793,31 +835,19 @@ class Parser():
             self.Arglistprime()
 
 
-# def give_googooli(x):
-#     print("first of " + x + " is: ")
-#     print(first[x])
-#     print("follow of " + x + " is: ")
-#     print(follow[x])
-# x = 'Expression'
-#
-# give_googooli(x)
-for i in first.keys():
-    if "ε" in first[i]:
-        print(i)
 
 if __name__ == '__main__':
-    f = FileReader("test.txt")
+    f = FileReader("input.txt")
     s = Scanner(f)
-    # next = ''
-    # while next != "$":
-    #     next = s.get_next_token()[0]
 
     root = Node("Program")
     p = Parser(s, root)
     p.Program()
-    for pre, fill, node in RenderTree(p.root):
-        print("%s%s" % (pre, node.name))
-    #Node("$", parrent=p.root)
     p.add_edge("$")
+    tree = ''
     for pre, fill, node in RenderTree(p.root):
-        print("%s%s" % (pre, node.name))
+        tree+= "%s%s\n" % (pre, node.name)
+    if p.errors == '':
+        p.errors = 'There is no syntax error.'
+    p.write_string("syntax_errors.txt", p.errors)
+    p.write_string("parse_tree.txt", tree)

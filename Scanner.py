@@ -249,7 +249,7 @@ class Scanner():
 
 if __name__ == '__main__':
     # f = FileReader(sys.argv[1]+"/input.txt")
-    f = FileReader("test.txt")
+    f = FileReader("input.txt")
     s = Scanner(f)
     s.get_next_token()
 
