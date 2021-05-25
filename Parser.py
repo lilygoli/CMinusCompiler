@@ -57,6 +57,8 @@ class Parser():
             self.cur_token = 'ID'
         if 'NUM, ' in self.cur_value:
             self.cur_token = 'NUM'
+        if self.cur_token == 'output':
+            print("yay")
         self.line_number = self.scanner.f.lineno
 
     def add_edge(self, b):
@@ -331,6 +333,7 @@ class Parser():
             self.Statementlist()
 
     def Statement(self):
+
         LA = self.cur_token
         if LA in ['{']:
             self.go_next_level(self.Compoundstmt, "Compound-stmt")
