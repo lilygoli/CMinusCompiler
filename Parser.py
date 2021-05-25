@@ -43,6 +43,7 @@ class Parser():
         self.line_number = 0
         self.cur_token = ''
         self.cur_value = ''
+        self.identifier_name = ''
         self.get_next_token()
         self.cur_father_node = start
         self.root = start
@@ -51,9 +52,11 @@ class Parser():
 
     def get_next_token(self):
         self.cur_token, self.cur_value = self.scanner.get_next_token()
-        if '(ID,' in self.cur_value:
+        if '(ID,' in self.cur_value and self.cur_token != 'output':  # OUTPUT MODIFICATION
+            self.identifier_name = self.cur_token
             self.cur_token = 'ID'
         if 'NUM, ' in self.cur_value:
+            self.identifier_name = self.cur_token
             self.cur_token = 'NUM'
         self.line_number = self.scanner.f.lineno
 
@@ -147,8 +150,10 @@ class Parser():
 
     def Declarationinitial(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in first["Declarationinitial"]:
             self.go_next_level(self.Typespecifier, "Type-specifier")
+            self.code_generator.code_gen("assignAddr", RE)
             self.match(self.cur_token)
         elif LA in follow["Declarationinitial"]:
             self.remove_node()
@@ -174,10 +179,12 @@ class Parser():
 
     def Vardeclarationprime(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in [';']:
             self.match(';')
         elif LA in ['[']:
             self.match('[')
+            self.code_generator.code_gen("increaseAddr", RE)
             self.match('NUM')
             self.match(']')
             self.match(';')
@@ -191,8 +198,10 @@ class Parser():
 
     def Fundeclarationprime(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in first["Fundeclarationprime"]:
             self.match('(')
+            self.code_generator.code_gen("newScope", RE)
             self.go_next_level(self.Params, "Params")
             self.match(')')
             self.go_next_level(self.Compoundstmt, "Compound-stmt")
@@ -206,7 +215,9 @@ class Parser():
 
     def Typespecifier(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in first["Typespecifier"]:
+            self.code_generator.code_gen("setType", RE)
             self.match(LA)
         elif LA in follow["Typespecifier"]:
             self.remove_node()
@@ -218,12 +229,15 @@ class Parser():
 
     def Params(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['int']:
             self.match('int')
+            self.code_generator.code_gen("assignAddr", RE)
             self.match(self.cur_token)
             self.go_next_level(self.Paramprime, "Param-prime")
             self.go_next_level(self.Paramlist, "Param-list")
         elif LA in ['void']:
+            self.code_generator.code_gen("assignAddr", RE)
             self.match('void')
             self.go_next_level(self.Paramlistvoidabtar, "Param-list-void-abtar")
         elif LA in follow["Params"]:
@@ -236,7 +250,9 @@ class Parser():
 
     def Paramlistvoidabtar(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['ID']:
+            self.code_generator.code_gen("assignAddr", RE)
             self.match(self.cur_token)
             self.go_next_level(self.Paramprime, "Param-prime")
             self.go_next_level(self.Paramlist, "Param-list")
@@ -327,6 +343,8 @@ class Parser():
             self.go_next_level(self.Returnstmt, "Return-stmt")
         elif LA in ['for']:
             self.go_next_level(self.Forstmt, "For-stmt")
+        elif LA in ['output']:
+            self.go_next_level(self.Output, "Output")
         elif LA in first['Statement']:
             self.go_next_level(self.Expressionstmt, "Expression-stmt")
         elif LA in follow['Statement']:
@@ -357,14 +375,19 @@ class Parser():
 
     def Selectionstmt(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in first['Selectionstmt']:
             self.match('if')
             self.match('(')
             self.go_next_level(self.Expression, "Expression")
+            self.code_generator.code_gen("save", RE)
             self.match(')')
             self.go_next_level(self.Statement, "Statement")
+            self.code_generator.code_gen("save", RE)
+            self.code_generator.code_gen("setConditional", RE)
             self.match('else')
             self.go_next_level(self.Statement, "Statement")
+            self.code_generator.code_gen("setUnconditional", RE)
         elif LA in follow['Selectionstmt']:
             self.remove_node()
             self.print_error_follow('Selection-stmt')
@@ -375,12 +398,17 @@ class Parser():
 
     def Iterationstmt(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in first['Iterationstmt']:
             self.match('while')
             self.match('(')
+            self.code_generator.code_gen("justSave", RE)
             self.go_next_level(self.Expression, "Expression")
+            self.code_generator.code_gen("save", RE)
             self.match(')')
             self.go_next_level(self.Statement, "Statement")
+            self.code_generator.code_gen("setJump", RE)
+            self.code_generator.code_gen("setConditionalFor", RE)
         elif LA in follow['Iterationstmt']:
             self.remove_node()
             self.print_error_follow('Iteration-stmt')
@@ -435,7 +463,9 @@ class Parser():
 
     def Vars(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in first['Vars']:
+            self.code_generator.code_gen("pid", RE)
             self.go_next_level(self.Var, "Var")
             self.go_next_level(self.Varzegond, "Var-zegond")
         elif LA in follow['Vars']:
@@ -476,9 +506,11 @@ class Parser():
 
     def Expression(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['NUM', '(', '+', '-']:
             self.go_next_level(self.Simpleexpressionzegond, "Simple-expression-zegond")
         elif LA in ['ID']:
+            self.code_generator.code_gen("pid", RE)
             self.match(self.cur_token)
             self.go_next_level(self.B, "B")
         elif LA in follow["Expression"]:
@@ -491,12 +523,15 @@ class Parser():
 
     def B(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['=']:
             self.match('=')
             self.go_next_level(self.Expression, "Expression")
+            self.code_generator.code_gen("assign", RE)
         elif LA in ['[']:
             self.match('[')
             self.go_next_level(self.Expression, "Expression")
+            self.code_generator.code_gen("getElement", RE)
             self.match(']')
             self.go_next_level(self.H, "H")
         elif LA in ['(', '<', '==', '+', '-', '*']:
@@ -510,9 +545,11 @@ class Parser():
 
     def H(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['=']:
             self.match('=')
             self.go_next_level(self.Expression, "Expression")
+            self.code_generator.code_gen("assign", RE)
         elif LA in ['<', '==', '+', '-', '*'] or LA in follow["H"]:
             self.go_next_level(self.G, "G")
             self.go_next_level(self.D, "D")
@@ -552,10 +589,11 @@ class Parser():
 
     def C(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['<', '==']:
             self.go_next_level(self.Relop, "Relop")
             self.go_next_level(self.Additiveexpression, "Additive-expression")
-
+            self.code_generator.code_gen("compare", RE)
         elif LA in follow["C"]:
             self.epsilon_child()
         else:
@@ -618,9 +656,11 @@ class Parser():
 
     def D(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['+', '-']:
             self.go_next_level(self.Addop, "Addop")
             self.go_next_level(self.Term, "Term")
+            self.code_generator.code_gen("add", RE)
             self.go_next_level(self.D, "D")
         elif LA in follow["D"]:
             self.epsilon_child()
@@ -684,9 +724,11 @@ class Parser():
 
     def G(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['*']:
             self.match('*')
             self.go_next_level(self.Signedfactor, "Signed-factor")
+            self.code_generator.code_gen("mult", RE)
             self.go_next_level(self.G, "G")
         elif LA in follow["G"]:
 
@@ -698,12 +740,14 @@ class Parser():
 
     def Signedfactor(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['+']:
             self.match('+')
             self.go_next_level(self.Factor, "Factor")
         elif LA in ['-']:
             self.match('-')
             self.go_next_level(self.Factor, "Factor")
+            self.code_generator.code_gen("negate", RE)
         elif LA in ['ID', 'NUM', '(']:
             self.go_next_level(self.Factor, "Factor")
         elif LA in follow["Signedfactor"]:
@@ -727,12 +771,14 @@ class Parser():
 
     def Signedfactorzegond(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['+']:
             self.match('+')
             self.go_next_level(self.Factor, "Factor")
         elif LA in ['-']:
             self.match('-')
             self.go_next_level(self.Factor, "Factor")
+            self.code_generator.code_gen("negate", RE)
         elif LA in ['NUM', '(']:
             self.go_next_level(self.Factorzegond, "Factor-zegond")
         elif LA in follow["Signedfactorzegond"]:
@@ -745,7 +791,9 @@ class Parser():
 
     def Factor(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['ID']:
+            self.code_generator.code_gen("pid", RE)
             self.match(self.cur_token)
             self.go_next_level(self.Varcallprime, "Var-call-prime")
         elif LA in ['(']:
@@ -753,6 +801,7 @@ class Parser():
             self.go_next_level(self.Expression, "Expression")
             self.match(')')
         elif LA in ['NUM']:
+            self.code_generator.code_gen("pushNum", RE)
             self.match('NUM')
         elif LA in follow["Factor"]:
             self.remove_node()
@@ -779,9 +828,11 @@ class Parser():
 
     def Varprime(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['[']:
             self.match('[')
             self.go_next_level(self.Expression, "Expression")
+            self.code_generator.code_gen("getElement", RE)
             self.match(']')
 
         elif LA in follow["Varprime"]:
@@ -806,11 +857,13 @@ class Parser():
 
     def Factorzegond(self):
         LA = self.cur_token
+        RE = self.identifier_name
         if LA in ['(']:
             self.match('(')
             self.go_next_level(self.Expression, "Expression")
             self.match(')')
         elif LA in ['NUM']:
+            self.code_generator.code_gen("pushNum", RE)
             self.match('NUM')
         elif LA in follow["Factorzegond"]:
             self.remove_node()
@@ -856,6 +909,16 @@ class Parser():
             self.print_error_illegal(LA)
             self.get_next_token()
             self.Arglistprime()
+
+    def Output(self):
+        LA = self.cur_token
+        RE = self.identifier_name
+        self.match('output')
+        self.match('(')
+        self.go_next_level(self.Expression, "Expression")
+        self.code_generator.code_gen("print", RE)
+        self.match(')')
+        self.match(';')
 
 
 def write_parse_files(p):

@@ -43,3 +43,6 @@ class SymbolTable:
                     return self.symbol_table[j].addrress
             end = self.scope_stack.get_element(i)
         return None
+
+    def end_scope(self):  # should be called in Return statements
+        self.symbol_table.pop(1)
