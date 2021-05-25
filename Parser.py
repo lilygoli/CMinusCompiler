@@ -364,7 +364,7 @@ class Parser():
             self.match(';')
         elif LA in [';']:
             self.match(';')
-            self.code_generator.code_gen("pop", self.identifier_name)
+          
         elif LA in first['Expressionstmt']:
             self.go_next_level(self.Expression, "Expression")
             self.match(';')
