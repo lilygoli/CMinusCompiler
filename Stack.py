@@ -8,7 +8,8 @@ class Stack:
         self.top += 1
 
     def pop(self, number):
-        self.stack = self.stack[:, -number]
+
+        self.stack = self.stack[: -number]
         self.top -= number
 
     def get_element(self, index):
