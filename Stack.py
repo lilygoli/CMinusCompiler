@@ -1,6 +1,6 @@
 class Stack:
     def __init__(self):
-        self.top = 0
+        self.top = -1
         self.stack = []
 
     def push(self, x):

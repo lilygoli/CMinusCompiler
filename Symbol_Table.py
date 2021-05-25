@@ -21,7 +21,7 @@ class SymbolTable:
         record = self.Record(lexeme)
         self.symbol_table.append(record)
 
-    def add_address(self, LA):
+    def add_addr(self, LA):
         for i in range(len(self.symbol_table) - 1, 0):
             if self.symbol_table[i].lexeme == LA:
                 self.symbol_table[i].address = self.begin_addr + self.offset
@@ -35,7 +35,7 @@ class SymbolTable:
     def set_type(self, LA):
         self.cur_type = LA
 
-    def get_addr(self, LA):
+    def find_addr(self, LA):
         end = len(self.symbol_table)
         for i in range(self.scope_stack.get_len() - 1, 0):
             for j in range(self.scope_stack.get_element(i), end - 1):
