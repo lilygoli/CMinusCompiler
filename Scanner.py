@@ -1,20 +1,21 @@
 # authors: Leili Goli 96106044, Mohammad Saneian 96109769
 
-import sys
+#import sys
 from File_Reader import FileReader
+from Symbol_Table import SymbolTable
 
-final_states = {5: 'SYMBOL', 9: 'SYMBOL', 10: 'SYMBOL', 11: 'SYMBOL', 12: 'SYMBOL', 13: 'SYMBOL', 14: 'SYMBOL',
+WHITE_SPACE_START_STATES = 29
+FINAL_STATES = {5: 'SYMBOL', 9: 'SYMBOL', 10: 'SYMBOL', 11: 'SYMBOL', 12: 'SYMBOL', 13: 'SYMBOL', 14: 'SYMBOL',
                 7: 'SYMBOL', 8: 'SYMBOL', 16: 'SYMBOL', 17: 'SYMBOL', 18: 'SYMBOL', 15: 'SYMBOL',
                 2: 'IDK', 4: 'NUM', 22: 'COMMENT', 26: 'COMMENT', 27: 'SYMBOL', 28: 'SYMBOL'}
 
-WHITE_SPACE_START_STATES = 29
 
-# -1: identifier kharab shode, invalid input
+# -1: corrupted identifier, invalid input
 # -2: invalid number
 # -3: unmatched comment
 # -4: unclosed comment
-error_msg = {-1: "Invalid input", -2: "Invalid number", -3: "Unmatched comment", -4: "Unclosed comment",
-             -5: "Invalid input"}
+ERROR_MSGS = {-1: "Invalid input", -2: "Invalid number", -3: "Unmatched comment", -4: "Unclosed comment",
+              -5: "Invalid input"}
 
 
 def is_num(c):
@@ -120,7 +121,7 @@ def dfa(state, c, next_c):
 
 
 class Scanner():
-    def __init__(self, file_reader):
+    def __init__(self, file_reader, symbol_table):
         self.f = file_reader
         self.state = 0
         self.buffer = ""
@@ -128,6 +129,8 @@ class Scanner():
         self.symbol_table = "if, else, void, int, while, break, switch, default, case, return, for".split(", ")
         self.tokens = {}
         self.errors = {}
+
+        self.symbol_table_with_scoping = symbol_table
 
     def write_symboltable(self):
         f = open("symbol_table.txt", "w")
@@ -161,7 +164,7 @@ class Scanner():
             return x
 
     def add_error(self, initial_error_message, line_num):
-        if initial_error_message == error_msg[-3] or initial_error_message == error_msg[-4]:
+        if initial_error_message == ERROR_MSGS[-3] or initial_error_message == ERROR_MSGS[-4]:
             self.error_buffer = self.abbr_comment(self.error_buffer)
         if line_num not in self.errors.keys():
             self.errors[line_num] = str(
@@ -175,14 +178,12 @@ class Scanner():
     def get_next_token(self):
 
         line_num = 1
-        # break_line = -1
+
         token_value, lexeme = 'sasa', 'lily'
 
         while True:
             c = self.f.get_next_char()
-            # print("char, ", c)
-            # if self.f.lineno == break_line:
-            #     break
+
             if self.state == 0:
                 line_num = self.f.lineno
             next_state = dfa(self.state, c, self.f.look_ahead)
@@ -203,16 +204,17 @@ class Scanner():
             self.state = next_state
 
             go_next = False
-            if next_state >= WHITE_SPACE_START_STATES or next_state in final_states.keys():
+            if next_state >= WHITE_SPACE_START_STATES or next_state in FINAL_STATES.keys():
 
-                if next_state in final_states.keys():
+                if next_state in FINAL_STATES.keys():
 
-                    token_type = final_states[next_state]
+                    token_type = FINAL_STATES[next_state]
 
                     if token_type == "IDK":
                         token_type = id_or_keyword(lexeme)
                     if token_type == "ID" and not lexeme in self.symbol_table:
                         self.symbol_table.append(lexeme)
+                        self.symbol_table_with_scoping.add_symbol(lexeme)
                     if token_type != "COMMENT":
 
                         token_value = self.make_token(token_type, lexeme)
@@ -228,7 +230,7 @@ class Scanner():
                 self.error_buffer = ""
 
             else:
-                initial_error_message = error_msg[next_state]
+                initial_error_message = ERROR_MSGS[next_state]
                 self.error_buffer = self.buffer
                 self.add_error(initial_error_message, line_num)
                 self.buffer = ""
@@ -236,20 +238,19 @@ class Scanner():
             if go_next or flag:
                 break
 
-
         if c == 'eof':
             self.write_symboltable()
             self.write_tokens()
             self.write_lexical_errors()
             lexeme = "$"
             token_value = ''
-        #print("SCANNER OUTPUT: ", lexeme, token_value)
+        # print("SCANNER OUTPUT: ", lexeme, token_value)
         return lexeme, token_value
 
 
 if __name__ == '__main__':
     # f = FileReader(sys.argv[1]+"/input.txt")
     f = FileReader("input.txt")
-    s = Scanner(f)
+    symbol_table = SymbolTable()
+    s = Scanner(f, symbol_table)
     s.get_next_token()
-
