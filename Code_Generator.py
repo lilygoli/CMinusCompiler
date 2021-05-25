@@ -27,6 +27,10 @@ class CodeGenerator:
             self.ss.push(p)
         elif func == "increaseAddr":
             self.symbol_table.offset += (int(LA) - 1) * 4
+        elif func == "getElement":
+            t = int(self.ss.get_element(self.ss.top)[1:]) + int(self.ss.get_element(self.ss.top - 1))
+            self.ss.pop(2)
+            self.ss.push(t)
         elif func == "newScope":
             self.symbol_table.new_scope = True
         elif func == "setType":
@@ -97,6 +101,7 @@ class CodeGenerator:
         elif func == "pushNum":
             self.ss.push(f"#{LA}")
         elif func == "assign":
+            #print(self.ss.stack)
             first = self.ss.get_element(self.ss.top - 1)
             second = self.ss.get_element(self.ss.top)
             self.PB.append(f"(ASSIGN, {second}, {first}, )")
