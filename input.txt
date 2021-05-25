@@ -1,12 +1,19 @@
-/*==== T3 ====*/
+/*==== T4 ====*/
+int a;
+int b;
+
 void main(void) {
-	int arr[10];
-	int var1;
-	int var2;
-	var1 = 1;
-	arr[0] = var1 = var2 = 5 ;
-	output(var1);
-	output(arr[0]);
-	output(var2);
+    int c;
+    int d;
+    a = c = 1;
+    d = b = 3;
+    output(a);
+    output(b);
+    c = a * 17 < 15 + 3;
+    output(c);
+    output(d < 3);
+    output(d - 8 < 3);
+    output(1 * 2);
+
 
 }

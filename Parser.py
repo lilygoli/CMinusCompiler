@@ -364,9 +364,11 @@ class Parser():
             self.match(';')
         elif LA in [';']:
             self.match(';')
+            self.code_generator.code_gen("pop", self.identifier_name)
         elif LA in first['Expressionstmt']:
             self.go_next_level(self.Expression, "Expression")
             self.match(';')
+            self.code_generator.code_gen("pop", self.identifier_name)
         elif LA in follow['Expressionstmt']:
             self.remove_node()
             self.print_error_follow('Expression-stmt')
@@ -592,10 +594,14 @@ class Parser():
     def C(self):
         LA = self.cur_token
 
-        if LA in ['<', '==']:
+        if LA in ['<']:
             self.go_next_level(self.Relop, "Relop")
             self.go_next_level(self.Additiveexpression, "Additive-expression")
-            self.code_generator.code_gen("compare", self.identifier_name)
+            self.code_generator.code_gen("compare_LT", self.identifier_name)
+        elif LA in ['==']:
+            self.go_next_level(self.Relop, "Relop")
+            self.go_next_level(self.Additiveexpression, "Additive-expression")
+            self.code_generator.code_gen("compare_EQ", self.identifier_name)
         elif LA in follow["C"]:
             self.epsilon_child()
         else:
@@ -607,10 +613,10 @@ class Parser():
         LA = self.cur_token
 
         if LA in ['<']:
-            self.code_generator.code_gen("setRelop", self.identifier_name)
+
             self.match('<')
         elif LA in ['==']:
-            self.code_generator.code_gen("setRelop", self.identifier_name)
+
             self.match('==')
         elif LA in follow["Relop"]:
             self.remove_node()

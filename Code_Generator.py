@@ -10,7 +10,7 @@ class CodeGenerator:
         self.ss = Stack()
         self.PB = []
         self.i = 0
-        self.cur_relop = '<'
+
 
     def get_temp(self):
         x = self.temp_offset
@@ -57,20 +57,25 @@ class CodeGenerator:
             self.PB[self.ss.get_element(self.ss.top)] = f"(JPF, {self.ss.get_element(self.ss.top - 1)}, {self.i}, )"
             self.ss.pop(3)
 
-        elif func == "compare":
+        elif func == "compare_LT":
             first = self.ss.get_element(self.ss.top - 1)
             second = self.ss.get_element(self.ss.top)
-            # print(self.cur_relop)
-            name = "EQ"
-            if self.cur_relop == '<':
-                name = "LT"
+
             temp = self.get_temp()
-            self.PB.append(f"({name}, {first}, {second}, {temp})")
+            self.PB.append(f"(LT, {first}, {second}, {temp})")
             self.ss.pop(2)
             self.ss.push(temp)
             self.i += 1
-        elif func == "setRelop":
-            self.cur_relop = LA
+        elif func == "compare_EQ":
+            first = self.ss.get_element(self.ss.top - 1)
+            second = self.ss.get_element(self.ss.top)
+
+            temp = self.get_temp()
+            self.PB.append(f"(EQ, {first}, {second}, {temp})")
+            self.ss.pop(2)
+            self.ss.push(temp)
+            self.i += 1
+
         elif func == "add":
             first = self.ss.get_element(self.ss.top - 1)
             second = self.ss.get_element(self.ss.top)
@@ -101,12 +106,16 @@ class CodeGenerator:
         elif func == "pushNum":
             self.ss.push(f"#{LA}")
         elif func == "assign":
-            #print(self.ss.stack)
+
             first = self.ss.get_element(self.ss.top - 1)
             second = self.ss.get_element(self.ss.top)
             self.PB.append(f"(ASSIGN, {second}, {first}, )")
-            self.ss.pop(2)
+            self.ss.pop(1)
             self.i += 1
+
+        elif func == "pop":
+            self.ss.pop(1)
+
         elif func == "print":
 
             self.PB.append(f"(PRINT, {self.ss.get_element(self.ss.top)}, ,)")
