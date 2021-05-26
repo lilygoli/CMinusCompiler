@@ -1,3 +1,5 @@
+# authors: Mohammad Saneian 96109769 Leili Goli 96106044
+
 class Stack:
     def __init__(self):
         self.top = -1

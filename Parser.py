@@ -57,8 +57,8 @@ class Parser():
             self.cur_token = 'ID'
         if 'NUM, ' in self.cur_value:
             self.cur_token = 'NUM'
-        if self.cur_token == 'output':
-            print("yay")
+
+
         self.line_number = self.scanner.f.lineno
 
     def add_edge(self, b):
@@ -124,12 +124,10 @@ class Parser():
         LA = self.cur_token
 
         if LA in ['int', 'void']:
-
             self.go_next_level(self.Declaration, "Declaration")
             self.go_next_level(self.Declarationlist, "Declaration-list")
         elif LA in follow["Declarationlist"]:
             self.epsilon_child()
-
             return
         else:
             self.print_error_illegal(LA)
@@ -321,7 +319,8 @@ class Parser():
 
     def Statementlist(self):
         LA = self.cur_token
-        if LA in first['Statementlist']:
+
+        if LA in first['Statementlist']+['output']:
             self.go_next_level(self.Statement, "Statement")
             self.go_next_level(self.Statementlist, "Statement-list")
         elif LA in follow["Statementlist"]:
@@ -335,6 +334,7 @@ class Parser():
     def Statement(self):
 
         LA = self.cur_token
+
         if LA in ['{']:
             self.go_next_level(self.Compoundstmt, "Compound-stmt")
         elif LA in ['if']:
@@ -364,7 +364,7 @@ class Parser():
             self.match(';')
         elif LA in [';']:
             self.match(';')
-          
+
         elif LA in first['Expressionstmt']:
             self.go_next_level(self.Expression, "Expression")
             self.match(';')
@@ -668,10 +668,15 @@ class Parser():
     def D(self):
         LA = self.cur_token
 
-        if LA in ['+', '-']:
+        if LA in ['+']:
             self.go_next_level(self.Addop, "Addop")
             self.go_next_level(self.Term, "Term")
             self.code_generator.code_gen("add", self.identifier_name)
+            self.go_next_level(self.D, "D")
+        elif LA in ['-']:
+            self.go_next_level(self.Addop, "Addop")
+            self.go_next_level(self.Term, "Term")
+            self.code_generator.code_gen("sub", self.identifier_name)
             self.go_next_level(self.D, "D")
         elif LA in follow["D"]:
             self.epsilon_child()
@@ -939,6 +944,7 @@ def write_parse_files(p):
         p.errors = 'There is no syntax error.'
     p.write_string("syntax_errors.txt", p.errors)
     p.write_string("parse_tree.txt", tree)
+    p.code_generator.write_to_file()
 
 
 if __name__ == '__main__':
@@ -954,4 +960,4 @@ if __name__ == '__main__':
 
     write_parse_files(p)
 
-    code_generator.write_to_file()
+

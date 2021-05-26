@@ -1,3 +1,5 @@
+# authors: Mohammad Saneian 96109769 Leili Goli 96106044
+
 from Stack import Stack
 
 
@@ -18,19 +20,31 @@ class CodeGenerator:
         return self.temp_begin + x
 
     def code_gen(self, func, LA):
-        print(func, LA)
+
         if func == "assignAddr":
             self.symbol_table.add_addr(LA)
         elif func == "pid":
             p = self.symbol_table.find_addr(LA)
-            # print("HEY", p, LA)
             self.ss.push(p)
         elif func == "increaseAddr":
             self.symbol_table.offset += (int(LA) - 1) * 4
         elif func == "getElement":
-            t = int(self.ss.get_element(self.ss.top)[1:]) + int(self.ss.get_element(self.ss.top - 1))
+
+            second = self.ss.get_element(self.ss.top)
+            temp = self.get_temp()
+            self.PB.append(f"(MULT, {second}, #{4}, {temp})")
+            self.i += 1
+            self.ss.pop(1)
+            self.ss.push(temp)
+            temp1 = self.get_temp()
+
+            first = self.ss.get_element(self.ss.top - 1)
+            second = self.ss.get_element(self.ss.top)
+            name = "ADD"
+            self.PB.append(f"({name}, #{first}, {second}, {temp1})")
+            self.i += 1
             self.ss.pop(2)
-            self.ss.push(t)
+            self.ss.push("@"+str(temp1))
         elif func == "newScope":
             self.symbol_table.new_scope = True
         elif func == "setType":
@@ -45,17 +59,19 @@ class CodeGenerator:
             self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JPF, {self.ss.get_element(self.ss.top - 2)}, {self.i}, )"
 
         elif func == "setUnconditional":
-            self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JP, {self.i}, ,)"
+
+            self.PB[self.ss.get_element(self.ss.top)] = f"(JP, {self.i}, ,)"
+
             self.ss.pop(3)
 
         elif func == "setJump":
             self.PB.append(f"(JP, {self.ss.get_element(self.ss.top - 2)}, ,)")
             self.i += 1
         elif func == "setConditionalFor":
-            # print(self.PB)
-            # print(self.ss.stack)
+
             self.PB[self.ss.get_element(self.ss.top)] = f"(JPF, {self.ss.get_element(self.ss.top - 1)}, {self.i}, )"
             self.ss.pop(3)
+
 
         elif func == "compare_LT":
             first = self.ss.get_element(self.ss.top - 1)
@@ -86,6 +102,16 @@ class CodeGenerator:
             self.ss.pop(2)
             self.ss.push(temp)
             self.i += 1
+        elif func == "sub":
+            first = self.ss.get_element(self.ss.top - 1)
+            second = self.ss.get_element(self.ss.top)
+
+            name = "SUB"
+            temp = self.get_temp()
+            self.PB.append(f"({name}, {first}, {second}, {temp})")
+            self.ss.pop(2)
+            self.ss.push(temp)
+            self.i += 1
         elif func == "mult":
             first = self.ss.get_element(self.ss.top - 1)
             second = self.ss.get_element(self.ss.top)
@@ -104,7 +130,10 @@ class CodeGenerator:
             self.ss.push(temp)
             self.i += 1
         elif func == "pushNum":
-            self.ss.push(f"#{LA}")
+            temp = self.get_temp()
+            self.PB.append(f"(ASSIGN, #{LA}, {temp}, )")
+            self.i += 1
+            self.ss.push(temp)
         elif func == "assign":
 
             first = self.ss.get_element(self.ss.top - 1)

@@ -7,6 +7,7 @@ from Scanner import Scanner
 from Symbol_Table import SymbolTable
 
 if __name__ == '__main__':
+
     f = FileReader("input.txt")
     symbol_table = SymbolTable()
     s = Scanner(f, symbol_table)
@@ -18,3 +19,4 @@ if __name__ == '__main__':
     p.add_edge("$")
 
     write_parse_files(p)
+

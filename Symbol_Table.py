@@ -1,3 +1,5 @@
+# authors: Mohammad Saneian 96109769 Leili Goli 96106044
+
 from Stack import Stack
 
 
