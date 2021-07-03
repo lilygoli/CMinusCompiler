@@ -1,5 +1,6 @@
 # authors: Mohammad Saneian 96109769 Leili Goli 96106044
 
+
 class Stack:
     def __init__(self):
         self.top = -1
@@ -10,12 +11,10 @@ class Stack:
         self.top += 1
 
     def pop(self, number):
-
         self.stack = self.stack[: -number]
         self.top -= number
 
     def get_element(self, index):
-
         return self.stack[index]
 
     def get_top_element(self):

@@ -1,5 +1,4 @@
 # authors: Mohammad Saneian 96109769 Leili Goli 96106044
-
 from Stack import Stack
 
 
@@ -12,7 +11,6 @@ class CodeGenerator:
         self.ss = Stack()
         self.PB = []
         self.i = 0
-
 
     def get_temp(self):
         x = self.temp_offset
@@ -44,7 +42,7 @@ class CodeGenerator:
             self.PB.append(f"({name}, #{first}, {second}, {temp1})")
             self.i += 1
             self.ss.pop(2)
-            self.ss.push("@"+str(temp1))
+            self.ss.push("@" + str(temp1))
         elif func == "newScope":
             self.symbol_table.new_scope = True
         elif func == "setType":
@@ -54,6 +52,7 @@ class CodeGenerator:
             self.ss.push(self.i)
             self.i += 1
         elif func == "justSave":
+            self.ss.push(0)  # dummy push for alignment with for
             self.ss.push(self.i)
         elif func == "setConditional":
             self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JPF, {self.ss.get_element(self.ss.top - 2)}, {self.i}, )"
@@ -65,13 +64,12 @@ class CodeGenerator:
             self.ss.pop(3)
 
         elif func == "setJump":
-            self.PB.append(f"(JP, {self.ss.get_element(self.ss.top - 2)}, ,)")
+            self.PB.append(f"(JP, {self.ss.get_element(self.ss.top - 3)}, ,)")
             self.i += 1
         elif func == "setConditionalFor":
 
-            self.PB[self.ss.get_element(self.ss.top)] = f"(JPF, {self.ss.get_element(self.ss.top - 1)}, {self.i}, )"
-            self.ss.pop(3)
-
+            self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JPF, {self.ss.get_element(self.ss.top - 2)}, {self.i}, )"
+            self.ss.pop(4)
 
         elif func == "compare_LT":
             first = self.ss.get_element(self.ss.top - 1)
@@ -144,6 +142,95 @@ class CodeGenerator:
 
         elif func == "pop":
             self.ss.pop(1)
+
+        elif func == "forTemp":
+            temp = self.get_temp()
+            self.PB.append(f"(ASSIGN, #0, {temp}, )")
+            self.i += 1
+            self.ss.push(temp)
+
+        elif func == "saveFor":
+            self.PB.append(f"(JP, {self.i + 2}, ,)")
+            self.i += 1
+            self.PB.append(None)
+            self.ss.push(self.i)
+            self.i += 1
+
+        elif func == "set":
+            self.ss.pop(1)
+            self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JP, {self.i + 2}, ,)"
+            self.i += 1
+
+        elif func == "for":
+            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 4)}, #{1}, {self.ss.get_element(self.ss.top - 4)})")
+            self.i += 1
+            temp1 = self.get_temp()
+            self.PB.append(f"(MULT, #{3}, {self.ss.get_element(self.ss.top - 4)}, {temp1})")
+            self.i += 1
+            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 1)}, {temp1}, {temp1})")
+            self.i += 1
+            temp2 = self.get_temp()
+            self.PB.append(f"(LT, {self.ss.get_element(self.ss.top - 3)}, {self.ss.get_element(self.ss.top - 4)}, {temp2})")
+            self.i += 1
+            self.PB.append(f"(JPF, {temp2},{temp1}, )")
+            self.i += 1
+            self.PB[self.ss.get_element(self.ss.top)] = self.PB.append(f"(JP, {self.i + 1}, ,)")
+            self.i += 1
+            self.ss.pop(5)
+
+        elif func == "assignFor":
+            self.PB.append(f"(ASSIGN, {self.ss.get_element(self.ss.top)}, {self.ss.get_element(self.ss.top - 1)}, )")
+            self.i += 1
+            self.ss.pop(1)
+
+        elif func == "jumpFor":
+            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 3)}, #{1}, {self.ss.get_element(self.ss.top - 3)})")
+            self.i += 1
+            self.PB.append(f"(JP, {self.ss.get_element(self.ss.top - 2)}, ,)")
+            self.i += 1
+
+        elif func == "breakJump":
+            self.PB.append(self.PB.append(f"(JP, {self.ss.get_element(self.ss.top)}, ,)"))
+            self.i += 1
+            self.ss.pop(5)
+
+        elif func == "pushOr":
+            self.ss.push("^")
+
+        elif func == "loadVal":
+            pass
+
+        elif func == "loadValPrime":
+            pass
+
+        elif func == "saveNameForFunc":
+            pass
+
+        elif func == "setFuncNameAddr":
+            pass
+
+        elif func == "popParams":
+            pass
+
+        elif func == "endScope":
+            self.symbol_table.end_scope()
+
+        elif func == "pushAnd":
+            self.ss.push("&")
+
+        elif func == "saveRet":
+            self.ss.push(self.i + 1)
+
+        elif func == "initPush":
+            self.ss.push(0)
+
+        elif func == "countPush":
+            self.ss.push(self.ss.get_element(self.ss.top - 1) + 1)
+
+        elif func == "jumpFunc":
+            addr = self.ss.get_element(self.ss.top - self.ss.get_element(self.ss.top) * 2 - 1)
+            self.PB.append(self.PB.append(f"(JP, @{addr}, ,)"))
+            self.i += 1
 
         elif func == "print":
 

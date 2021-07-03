@@ -47,5 +47,5 @@ class SymbolTable:
             end = self.scope_stack.get_element(i)
         return None
 
-    def end_scope(self):  # should be called in Return statements
+    def end_scope(self):  # should be called after function finishes
         self.symbol_table.pop(1)
