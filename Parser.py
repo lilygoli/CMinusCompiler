@@ -137,7 +137,6 @@ class Parser():
     def Declaration(self):
         LA = self.cur_token
         if LA in first["Declaration"]:
-            self.code_generator.code_gen("pushOr", self.identifier_name)
             self.go_next_level(self.Declarationinitial, "Declaration-initial")
             self.go_next_level(self.Declarationprime, "Declaration-prime")
             self.code_generator.code_gen("pop", self.identifier_name)
@@ -155,8 +154,6 @@ class Parser():
         if LA in first["Declarationinitial"]:
             self.go_next_level(self.Typespecifier, "Type-specifier")
             self.code_generator.code_gen("assignAddr", self.identifier_name)
-            self.code_generator.code_gen("loadValPrime", self.identifier_name)
-            self.code_generator.code_gen("saveNameForFunc", self.identifier_name)
             self.match(self.cur_token)
         elif LA in follow["Declarationinitial"]:
             self.remove_node()
@@ -205,14 +202,11 @@ class Parser():
         LA = self.cur_token
 
         if LA in first["Fundeclarationprime"]:
-            self.code_generator.code_gen("setFuncNameAddr", self.identifier_name)
             self.match('(')
             self.code_generator.code_gen("newScope", self.identifier_name)
             self.go_next_level(self.Params, "Params")
-            self.code_generator.code_gen("popParams", self.identifier_name)
             self.match(')')
             self.go_next_level(self.Compoundstmt, "Compound-stmt")
-            self.code_generator.code_gen("endScope", self.identifier_name)
         elif LA in follow["Fundeclarationprime"]:
             self.remove_node()
             self.print_error_follow("Fun-declaration-prime")
@@ -241,7 +235,6 @@ class Parser():
         if LA in ['int']:
             self.match('int')
             self.code_generator.code_gen("assignAddr", self.identifier_name)
-            self.code_generator.code_gen("loadVal", self.identifier_name)
             self.match(self.cur_token)
             self.go_next_level(self.Paramprime, "Param-prime")
             self.go_next_level(self.Paramlist, "Param-list")
@@ -262,7 +255,6 @@ class Parser():
 
         if LA in ['ID']:
             self.code_generator.code_gen("assignAddr", self.identifier_name)
-            self.code_generator.code_gen("loadVal", self.identifier_name)
             self.match(self.cur_token)
             self.go_next_level(self.Paramprime, "Param-prime")
             self.go_next_level(self.Paramlist, "Param-list")
@@ -290,7 +282,6 @@ class Parser():
     def Param(self):
         LA = self.cur_token
         if LA in first['Param']:
-            self.code_generator.code_gen("pushAnd", self.identifier_name)
             self.go_next_level(self.Declarationinitial, "Declaration-initial")
             self.code_generator.code_gen("pop", self.identifier_name)
             self.go_next_level(self.Paramprime, "Param-prime")
@@ -838,7 +829,6 @@ class Parser():
     def Factor(self):
         LA = self.cur_token
         if LA in ['ID']:
-            self.code_generator.code_gen("saveRet", self.identifier_name)
             self.code_generator.code_gen("pid", self.identifier_name)
             self.match(self.cur_token)
             self.go_next_level(self.Varcallprime, "Var-call-prime")
@@ -861,9 +851,7 @@ class Parser():
         LA = self.cur_token
         if LA in ['(']:
             self.match('(')
-            self.code_generator.code_gen("initPush", self.identifier_name)
             self.go_next_level(self.Args, "Args")
-            self.code_generator.code_gen("countPush", self.identifier_name)
             self.match(')')
             self.code_generator.code_gen("jumpFunc", self.identifier_name)
         elif LA in ['[']:
@@ -950,7 +938,6 @@ class Parser():
         LA = self.cur_token
         if LA in [',']:
             self.match(',')
-            self.code_generator.code_gen("countPush", self.identifier_name)
             self.go_next_level(self.Expression, "Expression")
             self.go_next_level(self.Arglistprime, "Arg-list-prime")
         elif LA in follow["Arglistprime"]:

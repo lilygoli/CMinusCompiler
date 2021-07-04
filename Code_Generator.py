@@ -194,50 +194,116 @@ class CodeGenerator:
             self.i += 1
             self.ss.pop(5)
 
-        elif func == "pushOr":
-            self.ss.push("^")
-
-        elif func == "loadVal":
-            pass
-
-        elif func == "loadValPrime":
-            pass
-
-        elif func == "saveNameForFunc":
-            pass
-
-        elif func == "setFuncNameAddr":
-            pass
-
-        elif func == "popParams":
-            pass
-
-        elif func == "endScope":
-            self.symbol_table.end_scope()
-
-        elif func == "pushAnd":
-            self.ss.push("&")
-
-        elif func == "saveRet":
-            self.ss.push(self.i + 1)
-
-        elif func == "initPush":
-            self.ss.push(0)
-
-        elif func == "countPush":
-            self.ss.push(self.ss.get_element(self.ss.top - 1) + 1)
-
-        elif func == "jumpFunc":
-            addr = self.ss.get_element(self.ss.top - self.ss.get_element(self.ss.top) * 2 - 1)
-            self.PB.append(self.PB.append(f"(JP, @{addr}, ,)"))
-            self.i += 1
-
+        # elif func == "pushOr": done
+        #     self.ss.push("^")
+        #
+        # elif func == "loadVal": done
+        #     pass
+        #
+        # elif func == "loadValPrime":
+        #     pass
+        #
+        # elif func == "saveNameForFunc":
+        #     pass
+        #
+        # elif func == "setFuncNameAddr":
+        #     pass
+        #
+        # elif func == "popParams":
+        #     pass
+        #
+        # elif func == "endScope":
+        #     self.symbol_table.end_scope()
+        #
+        # elif func == "pushAnd":
+        #     self.ss.push("&")
+        #
+        # elif func == "saveRet":
+        #     self.ss.push(self.i + 1)
+        #
+        # elif func == "initPush":
+        #     self.ss.push(0)
+        #
+        # elif func == "countPush":
+        #     self.ss.push(self.ss.get_element(self.ss.top - 1) + 1)
+        #
+        # elif func == "jumpFunc":
+        #     addr = self.ss.get_element(self.ss.top - self.ss.get_element(self.ss.top) * 2 - 1)
+        #     self.PB.append(self.PB.append(f"(JP, @{addr}, ,)"))
+        #     self.i += 1
         elif func == "print":
 
             self.PB.append(f"(PRINT, {self.ss.get_element(self.ss.top)}, ,)")
             self.ss.pop(1)
             self.i += 1
-
+        elif func == "allocFunc":
+            funcname = self.ss.get_element(self.ss.top)
+            funcAddr = self.symbol_table.find_addr(funcname)
+            self.ss.pop(1)
+            t = self.get_temp()
+            self.PB.append(f"(ASSIGN, #{t}, {funcAddr}, )")
+            self.i += 1
+            locFunc = t
+            addrParam = self.get_temp()
+            res = self.get_temp()
+            retAddr = self.get_temp()
+            self.ss.push(t)
+            self.ss.push(self.get_temp())
+        elif func == "setParam":
+            addr = self.symbol_table.find_addr(LA)
+            start = self.ss.get_element(self.ss.top)
+            self.PB.append(f"(ASSIGN, #{addr}, {start}, )")
+            self.i += 1
+            self.ss.pop(1)
+            self.ss.push(start + 4)
+        elif func == "popFunc":
+            self.ss.pop(1)
+            top = self.ss.get_element(self.ss.top)
+            self.PB.append(f"(ASSIGN, #{self.i + 1}, {top}, )")
+            self.i += 1
+        elif func == "pushRes":
+            start = self.ss.get_element(self.ss.top - 1)
+            resAddr = start + 8
+            self.PB.append(f"(ASSIGN, #{self.ss.get_element(self.ss.top)}, {resAddr}, )")
+            self.i += 1
+            self.ss.pop(1)
+        elif func == "jumpBack":
+            first = self.ss.get_element(self.ss.top)
+            ret = first + 12
+            self.PB.append(f"(JP, @{ret}, ,)")
+            self.i += 1
+            self.ss.pop(1)
+        elif func == "pushFuncAddr":
+            funcAddr = self.symbol_table.find_addr(LA)
+            t = self.get_temp()
+            self.PB.append(f"(ADD, {funcAddr}, #{12}, {t})")
+            self.i += 1
+            self.PB.append(f"(ASSIGN, #{self.i + 1}, @{t}, )")
+            self.i += 1
+            self.ss.push(funcAddr)
+        elif func == "setInput":
+            func = self.ss.get_element(self.ss.top - 2)
+            t = self.get_temp()
+            self.PB.append(f"(ADD, {func}, {4}, {t})")
+            self.i += 1
+            t1 = self.get_temp()
+            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 1)}, @{t}, {t1})")
+            self.i += 1
+            self.PB.append(f"(ASSIGN, #{self.ss.get_element(self.ss.top)}, @{t1}, )")
+            self.i += 1
+            offset = self.ss.get_element(self.ss.top - 1)
+            self.ss.pop(2)
+            self.ss.push(offset + 1)
+        elif func == "jumpFunc":
+            self.ss.pop(1)
+            self.PB.append(f"(JP, @{self.ss.get_element(self.ss.top)}, ,)")
+            self.i += 1
+        elif func == "pushAddrRes":
+            funcAddr = self.ss.get_element(self.ss.top)
+            t = self.get_temp()
+            self.PB.append(f"(ADD, {funcAddr}, #{8}, {t})")
+            self.ss.pop(1)
+            self.ss.push(t)
     def write_to_file(self):
         f = open("output.txt", "w")
 
