@@ -18,7 +18,7 @@ class CodeGenerator:
         return self.temp_begin + x
 
     def code_gen(self, func, LA):
-
+        print("in code gen: func:", func, "LA: ", LA)
         if func == "assignAddr":
             self.symbol_table.add_addr(LA)
         elif func == "pid":
@@ -193,50 +193,14 @@ class CodeGenerator:
             self.PB.append(self.PB.append(f"(JP, {self.ss.get_element(self.ss.top)}, ,)"))
             self.i += 1
             self.ss.pop(5)
-
-        # elif func == "pushOr": done
-        #     self.ss.push("^")
-        #
-        # elif func == "loadVal": done
-        #     pass
-        #
-        # elif func == "loadValPrime":
-        #     pass
-        #
-        # elif func == "saveNameForFunc":
-        #     pass
-        #
-        # elif func == "setFuncNameAddr":
-        #     pass
-        #
-        # elif func == "popParams":
-        #     pass
-        #
-        # elif func == "endScope":
-        #     self.symbol_table.end_scope()
-        #
-        # elif func == "pushAnd":
-        #     self.ss.push("&")
-        #
-        # elif func == "saveRet":
-        #     self.ss.push(self.i + 1)
-        #
-        # elif func == "initPush":
-        #     self.ss.push(0)
-        #
-        # elif func == "countPush":
-        #     self.ss.push(self.ss.get_element(self.ss.top - 1) + 1)
-        #
-        # elif func == "jumpFunc":
-        #     addr = self.ss.get_element(self.ss.top - self.ss.get_element(self.ss.top) * 2 - 1)
-        #     self.PB.append(self.PB.append(f"(JP, @{addr}, ,)"))
-        #     self.i += 1
         elif func == "print":
 
             self.PB.append(f"(PRINT, {self.ss.get_element(self.ss.top)}, ,)")
             self.ss.pop(1)
             self.i += 1
-        elif func == "allocFunc":
+        elif func == "allocateFunc":
+            print(self.ss)
+            print("YO", self.ss.top)
             funcname = self.ss.get_element(self.ss.top)
             funcAddr = self.symbol_table.find_addr(funcname)
             self.ss.pop(1)
@@ -304,6 +268,17 @@ class CodeGenerator:
             self.PB.append(f"(ADD, {funcAddr}, #{8}, {t})")
             self.ss.pop(1)
             self.ss.push(t)
+        elif func == "saveNameForFunc":
+            x = self.symbol_table.add_addr(LA)
+            self.ss.push(x)
+        elif func == "popName":
+            self.ss.pop(1)
+        elif func == "endScope":
+            self.symbol_table.end_scope()
+        elif func == "initInput":
+            self.ss.push(0)
+        else:
+            print("illigal codegen #!! WTF")
     def write_to_file(self):
         f = open("output.txt", "w")
 
