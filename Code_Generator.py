@@ -22,7 +22,8 @@ class CodeGenerator:
         print("in code gen: func:", func, "LA: ", LA)
         print("stack", self.ss.stack)
         print("top", self.ss.top , len(self.ss.stack)-1)
-
+        if len(self.PB) > 0:
+            print("PB", self.PB[-1])
         if func == "assignAddr":
             self.symbol_table.add_addr(LA)
 
@@ -56,6 +57,11 @@ class CodeGenerator:
             self.PB += [None]
             self.ss.push(self.i)
             self.i += 1
+        elif func == "saveX":
+            t = self.get_temp()
+            self.PB.append(f"(ASSIGN, #{self.i + 1}, {t}, )")
+            self.i += 1
+            self.ss.push(t)
         elif func == "justSave":
             self.ss.push(0)  # dummy push for alignment with for
             self.ss.push(self.i)
@@ -144,7 +150,7 @@ class CodeGenerator:
             second = self.ss.get_element(self.ss.top)
             self.PB.append(f"(ASSIGN, {second}, {first}, )")
             self.i += 1
-            self.ss.pop(1)
+            self.ss.pop(2)
             t = self.get_temp()
             self.PB.append(f"(ASSIGN, #{1}, {t}, )")
             self.i += 1
@@ -161,6 +167,7 @@ class CodeGenerator:
 
         elif func == "saveFor":
             self.PB.append(f"(JP, {self.i + 2}, ,)")
+
             self.i += 1
             self.PB.append(None)
             self.ss.push(self.i)
@@ -168,21 +175,29 @@ class CodeGenerator:
 
         elif func == "set":
             self.ss.pop(1)
-            self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JP, {self.i + 2}, ,)"
+            self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JP, {self.i + 3}, ,)"
+            first = self.ss.get_top_element()
+            second = self.ss.get_element(self.ss.top - 1)
+            third = self.ss.get_element(self.ss.top - 2)
+            self.ss.pop(3)
+            self.PB.append(f"(ASSIGN, #1, {third}, )")
             self.i += 1
+            self.ss.push(third)
+            self.ss.push(second)
+            self.ss.push(first)
+
+
 
         elif func == "for":
-            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 4)}, #{1}, {self.ss.get_element(self.ss.top - 4)})")
+            # self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 4)}, #{1}, {self.ss.get_element(self.ss.top - 4)})")
+            # self.i += 1
+            # temp1 = self.get_temp()
+            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 1)}, #{2}, {self.ss.get_element(self.ss.top - 1)})")
             self.i += 1
-            temp1 = self.get_temp()
-            self.PB.append(f"(MULT, #{3}, {self.ss.get_element(self.ss.top - 4)}, {temp1})")
-            self.i += 1
-            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 1)}, {temp1}, {temp1})")
-            self.i += 1
-            temp2 = self.get_temp()
-            self.PB.append(f"(LT, {self.ss.get_element(self.ss.top - 3)}, {self.ss.get_element(self.ss.top - 4)}, {temp2})")
-            self.i += 1
-            self.PB.append(f"(JPF, {temp2},{temp1}, )")
+            # temp2 = self.get_temp()
+            # self.PB.append(f"(LT, {self.ss.get_element(self.ss.top - 3)}, {self.ss.get_element(self.ss.top - 4)}, {temp2})")
+            # self.i += 1
+            self.PB.append(f"(JPF, {self.ss.get_element(self.ss.top - 3)},@{self.ss.get_element(self.ss.top - 1)}, )")
             self.i += 1
             self.PB[self.ss.get_element(self.ss.top)] = f"(JP, {self.i + 1}, ,)"
             self.ss.pop(5)
@@ -193,8 +208,8 @@ class CodeGenerator:
             self.ss.pop(1)
 
         elif func == "jumpFor":
-            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 3)}, #{1}, {self.ss.get_element(self.ss.top - 3)})")
-            self.i += 1
+            # self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 3)}, #{1}, {self.ss.get_element(self.ss.top - 3)})")
+            # self.i += 1
             self.PB.append(f"(JP, {self.ss.get_element(self.ss.top - 2)}, ,)")
             self.i += 1
 
@@ -206,7 +221,6 @@ class CodeGenerator:
         elif func == "allocateFunc":
             funcname = self.ss.get_element(self.ss.top)
             if funcname == 'main':
-                # self.PB[0] = f"(JP, {self.i + 1}, ,)"
                 self.is_main = True
                 self.ss.pop(1)
                 return
@@ -221,6 +235,8 @@ class CodeGenerator:
             retAddr = self.get_temp()
             paramStart = self.get_temp()
             self.PB.append(f"(ASSIGN, #{paramStart}, {addrParam}, )")
+            self.i += 1
+            self.PB.append(f"(ASSIGN, #{1}, {res}, )")
             self.i += 1
             self.ss.push(t)
             self.ss.push("startFunc")
@@ -258,11 +274,24 @@ class CodeGenerator:
             self.ss.push(base)
 
         elif func == "jumpBack":
-            first = self.ss.get_element(self.ss.top)
-            ret = first + 12
-            self.PB.append(f"(JP, @{ret}, ,)")
-            self.i += 1
-            self.ss.pop(1)
+            if not  self.is_main:
+                first = self.ss.get_element(self.ss.top)
+                ret = first + 12
+                self.PB.append(f"(JP, @{ret}, ,)")
+                self.i += 1
+                self.ss.pop(1)
+
+        elif func == "endFunc":
+            if not  self.is_main:
+                additional = []
+                while self.ss.get_element(self.ss.top) != 'startFunc':
+                    additional += [self.ss.get_element(self.ss.top)]
+                    self.ss.pop(1)
+
+                base = self.ss.get_element(self.ss.top - 1)
+                for elem in range(len(additional) - 1, -1, -1):
+                    self.ss.push(additional[elem])
+                self.ss.push(base)
 
         elif func == "popRemaining":
             if not self.is_main:
@@ -342,6 +371,7 @@ class CodeGenerator:
         f = open("output.txt", "w")
 
         for i, j in enumerate(self.PB):
+            print("LINEEEEEEE", i, j)
             line = str(i) + '\t' + j + '\n'
             f.write(line)
         f.close()

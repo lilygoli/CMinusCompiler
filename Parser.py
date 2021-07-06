@@ -213,6 +213,8 @@ class Parser():
             self.match(')')
             self.code_generator.code_gen("saveFunc", self.identifier_name)
             self.go_next_level(self.Compoundstmt, "Compound-stmt")
+            self.code_generator.code_gen("endFunc", self.identifier_name)
+            self.code_generator.code_gen("jumpBack", self.identifier_name)
             self.code_generator.code_gen("popRemaining", self.identifier_name)
             self.code_generator.code_gen("endScope", self.identifier_name)
         elif LA in follow["Fundeclarationprime"]:
@@ -458,6 +460,7 @@ class Parser():
         LA = self.cur_token
         if LA in [';']:
             self.code_generator.code_gen("popFuncName", self.identifier_name)
+            self.code_generator.code_gen("endFunc", self.identifier_name)
             self.match(';')
         elif LA in first['Returnstmtprime']:
             self.go_next_level(self.Expression, "Expression")
@@ -478,7 +481,7 @@ class Parser():
             self.code_generator.code_gen("forTemp", self.identifier_name)
             self.code_generator.code_gen("saveFor", self.identifier_name)
             self.match('for')
-            self.code_generator.code_gen("save", self.identifier_name)
+            self.code_generator.code_gen("saveX", self.identifier_name)
             self.code_generator.code_gen("pid", self.identifier_name)
             self.match(self.cur_token)
             self.match('=')
@@ -530,6 +533,7 @@ class Parser():
     def Var(self):
         LA = self.cur_token
         if LA in first['Var']:
+            self.code_generator.code_gen("pid", self.identifier_name)
             self.match(self.cur_token)
             self.go_next_level(self.Varprime, "Var-prime")
         elif LA in follow['Var']:

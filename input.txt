@@ -1,18 +1,25 @@
-/*===== Sample 1 =====*/
-int foo(int x){
-	if (x < 0){
-		output(x);
-		return 1;
+/*===== sample 3 =====*/
+void foo(int x){
+	int a;
+	int b;
+	int c;
+	int d;
+	int e;
+	a = 1;
+	b = 2;
+	c = 3;
+	d = x;
+
+	for e = a, b, c {
+		for x = a, b, c, d, e {
+			output(x);
+		}
 	}
-	else {
-		output(x);
-		return x + -2;
-	}
+	x = d;
+	output(x - a - b - c);
+
 }
-void main(void){
-	int i;
-	i= foo(0);
-	output(i);
-	i=foo(10);
-	output(i);
+void main ( void )
+{
+	foo (30);
 }
