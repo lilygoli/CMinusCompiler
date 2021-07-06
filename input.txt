@@ -1,25 +1,18 @@
-/*== T7  ==*/
-void main( void )
-{
-    int n;
-    int sum;
-    int i;
-    int t;
-    int a;
-    i = 1;
-    n = 501;
-    while(i < n)
-    {
-        t = i;
-        sum = 0;
-        while(0 < t)
-        {
-            while (0 < t) { t = t - 10; }
-            a = 10 - - t;
-            sum = sum + a * a * a;
-        }
-        if(sum == i) { output( i );} else {}
-        i = i + 1;
-    }
-
+/*===== Sample 1 =====*/
+int foo(int x){
+	if (x < 0){
+		output(x);
+		return 1;
+	}
+	else {
+		output(x);
+		return x + -2;
+	}
+}
+void main(void){
+	int i;
+	i= foo(0);
+	output(i);
+	i=foo(10);
+	output(i);
 }

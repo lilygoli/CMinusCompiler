@@ -137,9 +137,10 @@ class Parser():
     def Declaration(self):
         LA = self.cur_token
         if LA in first["Declaration"]:
+
             self.go_next_level(self.Declarationinitial, "Declaration-initial")
             self.go_next_level(self.Declarationprime, "Declaration-prime")
-            self.code_generator.code_gen("pop", self.identifier_name)
+
         elif LA in follow["Declaration"]:
             self.remove_node()
             self.print_error_follow("Declaration")
@@ -169,7 +170,6 @@ class Parser():
         if LA in ['(']:
             self.go_next_level(self.Fundeclarationprime, "Fun-declaration-prime")
         elif LA in first["Declarationprime"]:
-            self.code_generator.code_gen("saveNameForFunc", self.identifier_name)
             self.go_next_level(self.Vardeclarationprime, "Var-declaration-prime")
         elif LA in follow["Declarationprime"]:
             self.remove_node()
@@ -210,9 +210,10 @@ class Parser():
             self.code_generator.code_gen("newScope", self.identifier_name)
             self.go_next_level(self.Params, "Params")
             # jadid
-            self.code_generator.code_gen("popFunc", self.identifier_name)
             self.match(')')
+            self.code_generator.code_gen("saveFunc", self.identifier_name)
             self.go_next_level(self.Compoundstmt, "Compound-stmt")
+            self.code_generator.code_gen("popRemaining", self.identifier_name)
             self.code_generator.code_gen("endScope", self.identifier_name)
         elif LA in follow["Fundeclarationprime"]:
             self.remove_node()
@@ -246,6 +247,7 @@ class Parser():
             self.match(self.cur_token)
             self.go_next_level(self.Paramprime, "Param-prime")
             self.go_next_level(self.Paramlist, "Param-list")
+            self.code_generator.code_gen("popFunc", self.identifier_name)
         elif LA in ['void']:
             # self.code_generator.code_gen("assignAddr", self.identifier_name)
             self.match('void')
@@ -382,6 +384,7 @@ class Parser():
         elif LA in first['Expressionstmt']:
             self.go_next_level(self.Expression, "Expression")
             self.match(';')
+            print("1")
             self.code_generator.code_gen("pop", self.identifier_name)
         elif LA in follow['Expressionstmt']:
             self.remove_node()
@@ -569,6 +572,7 @@ class Parser():
             self.match(']')
             self.go_next_level(self.H, "H")
         elif LA in ['(', '<', '==', '+', '-', '*']:
+
             self.go_next_level(self.Simpleexpressionprime, "Simple-expression-prime")
         elif LA in follow["B"]:
             self.go_next_level(self.Simpleexpressionprime, "Simple-expression-prime")
@@ -838,8 +842,6 @@ class Parser():
     def Factor(self):
         LA = self.cur_token
         if LA in ['ID']:
-            # soal
-            self.code_generator.code_gen("pushFuncAddr", self.identifier_name)
             self.code_generator.code_gen("pid", self.identifier_name)
             self.match(self.cur_token)
             self.go_next_level(self.Varcallprime, "Var-call-prime")
@@ -862,6 +864,7 @@ class Parser():
         LA = self.cur_token
         if LA in ['(']:
             self.match('(')
+            print("BBBBBBBBBBBBBBBBBBBB")
             self.code_generator.code_gen("initInput", self.identifier_name)
             self.go_next_level(self.Args, "Args")
             self.match(')')
@@ -895,9 +898,13 @@ class Parser():
     def Factorprime(self):
         LA = self.cur_token
         if LA in ['(']:
+
             self.match('(')
+            self.code_generator.code_gen("initInput", self.identifier_name)
             self.go_next_level(self.Args, "Args")
             self.match(')')
+            self.code_generator.code_gen("jumpFunc", self.identifier_name)
+            self.code_generator.code_gen("pushAddrRes", self.identifier_name)
         elif LA in follow["Factorprime"]:
             self.epsilon_child()
         else:
@@ -939,6 +946,7 @@ class Parser():
         if LA in first['Arglist']:
             self.go_next_level(self.Expression, "Expression")
             # jadid
+            print("1111111111")
             self.code_generator.code_gen("setInput", self.identifier_name)
             self.go_next_level(self.Arglistprime, "Arg-list-prime")
         elif LA in follow["Arglist"]:
@@ -955,6 +963,7 @@ class Parser():
             self.match(',')
             self.go_next_level(self.Expression, "Expression")
             # jadid
+            print("2222222222")
             self.code_generator.code_gen("setInput", self.identifier_name)
             self.go_next_level(self.Arglistprime, "Arg-list-prime")
         elif LA in follow["Arglistprime"]:
