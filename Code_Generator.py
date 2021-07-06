@@ -81,6 +81,7 @@ class CodeGenerator:
         elif func == "setConditionalFor":
 
             self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JPF, {self.ss.get_element(self.ss.top - 2)}, {self.i}, )"
+            self.PB[self.ss.get_element(self.ss.top)] = f"(JP, {self.i}, )"
             self.ss.pop(4)
 
         elif func == "compare_LT":
@@ -371,7 +372,8 @@ class CodeGenerator:
         f = open("output.txt", "w")
 
         for i, j in enumerate(self.PB):
-            print("LINEEEEEEE", i, j)
+            if not j:
+                continue
             line = str(i) + '\t' + j + '\n'
             f.write(line)
         f.close()

@@ -1,25 +1,21 @@
-/*===== sample 3 =====*/
-void foo(int x){
-	int a;
-	int b;
-	int c;
-	int d;
-	int e;
-	a = 1;
-	b = 2;
-	c = 3;
-	d = x;
-
-	for e = a, b, c {
-		for x = a, b, c, d, e {
-			output(x);
-		}
-	}
-	x = d;
-	output(x - a - b - c);
-
+/*===== Sample 1 =====*/
+int f(int x){
+    int i;
+    i = 1;
+    int ans;
+    ans = 0;
+    while(i < x){
+        ans = ans + i;
+        i = i + 1;
+    }
+    return ans;
 }
-void main ( void )
-{
-	foo (30);
+void main(void){
+	int i;
+	i = 1;
+	while(i < 5){
+	    int t;
+	    t = f(i);
+	    output(t)
+	}
 }
