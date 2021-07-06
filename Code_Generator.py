@@ -29,6 +29,7 @@ class CodeGenerator:
 
         elif func == "pid":
             p = self.symbol_table.find_addr(LA)
+            print("pppp", p)
             self.ss.push(p)
         elif func == "increaseAddr":
             self.symbol_table.offset += (int(LA) - 1) * 4
@@ -63,10 +64,10 @@ class CodeGenerator:
             self.i += 1
             self.ss.push(t)
         elif func == "justSave":
-            self.ss.push(0)  # dummy push for alignment with for
+
             self.ss.push(self.i)
         elif func == "setConditional":
-            print(self.ss.stack)
+
             self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JPF, {self.ss.get_element(self.ss.top - 2)}, {self.i}, )"
 
         elif func == "setUnconditional":
@@ -81,8 +82,8 @@ class CodeGenerator:
         elif func == "setConditionalFor":
 
             self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JPF, {self.ss.get_element(self.ss.top - 2)}, {self.i}, )"
-            self.PB[self.ss.get_element(self.ss.top)] = f"(JP, {self.i}, )"
-            self.ss.pop(4)
+            self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JP, {self.i}, )"
+            self.ss.pop(5)
 
         elif func == "compare_LT":
             first = self.ss.get_element(self.ss.top - 1)
@@ -174,12 +175,22 @@ class CodeGenerator:
             self.ss.push(self.i)
             self.i += 1
 
+        elif func == "saveForPrime":
+            self.PB.append(f"(JP, {self.i + 2}, ,)")
+
+            self.i += 1
+            self.PB.append(None)
+            self.ss.push(self.i)
+            self.ss.push("startLoop")
+            self.i += 1
+
         elif func == "set":
             self.ss.pop(1)
             self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JP, {self.i + 3}, ,)"
             first = self.ss.get_top_element()
             second = self.ss.get_element(self.ss.top - 1)
             third = self.ss.get_element(self.ss.top - 2)
+
             self.ss.pop(3)
             self.PB.append(f"(ASSIGN, #1, {third}, )")
             self.i += 1
@@ -187,21 +198,15 @@ class CodeGenerator:
             self.ss.push(second)
             self.ss.push(first)
 
-
-
         elif func == "for":
-            # self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 4)}, #{1}, {self.ss.get_element(self.ss.top - 4)})")
-            # self.i += 1
-            # temp1 = self.get_temp()
-            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 1)}, #{2}, {self.ss.get_element(self.ss.top - 1)})")
+
+            self.PB.append(f"(ADD, {self.ss.get_element(self.ss.top - 2)}, #{2}, {self.ss.get_element(self.ss.top - 2)})")
             self.i += 1
-            # temp2 = self.get_temp()
-            # self.PB.append(f"(LT, {self.ss.get_element(self.ss.top - 3)}, {self.ss.get_element(self.ss.top - 4)}, {temp2})")
-            # self.i += 1
-            self.PB.append(f"(JPF, {self.ss.get_element(self.ss.top - 3)},@{self.ss.get_element(self.ss.top - 1)}, )")
+
+            self.PB.append(f"(JPF, {self.ss.get_element(self.ss.top - 4)},@{self.ss.get_element(self.ss.top - 2)}, )")
             self.i += 1
-            self.PB[self.ss.get_element(self.ss.top)] = f"(JP, {self.i + 1}, ,)"
-            self.ss.pop(5)
+            self.PB[self.ss.get_element(self.ss.top - 1)] = f"(JP, {self.i }, ,)"
+            self.ss.pop(6)
 
         elif func == "assignFor":
             self.PB.append(f"(ASSIGN, {self.ss.get_element(self.ss.top)}, {self.ss.get_element(self.ss.top - 1)}, )")
@@ -215,9 +220,14 @@ class CodeGenerator:
             self.i += 1
 
         elif func == "breakJump":
-            self.PB.append(f"(JP, {self.ss.get_element(self.ss.top)}, ,)")
+            x = self.ss.top
+            while self.ss.get_element(x) != "startLoop":
+                x -=1
+
+            x -= 1
+            self.PB.append(f"(JP, {self.ss.get_element(x)}, ,)")
             self.i += 1
-            self.ss.pop(5)
+            # self.ss.pop(5)
 
         elif func == "allocateFunc":
             funcname = self.ss.get_element(self.ss.top)
@@ -322,7 +332,7 @@ class CodeGenerator:
             self.i += 1
             self.PB.append(f"(ASSIGN, {self.ss.get_element(self.ss.top)}, @{tt2}, )")
             self.i += 1
-            print("XXXXXXX", self.ss.stack, self.ss.top, self.ss.get_element(self.ss.top - 1))
+            # print("XXXXXXX", self.ss.stack, self.ss.top, self.ss.get_element(self.ss.top - 1))
             offset = self.ss.get_element(self.ss.top - 1)
             self.ss.pop(2)
             self.ss.push(offset + 4)
@@ -365,15 +375,13 @@ class CodeGenerator:
             self.ss.pop(1)
             self.i += 1
 
-        else:
-            print("illigal codegen #!! WTF")
+
 
     def write_to_file(self):
         f = open("output.txt", "w")
 
         for i, j in enumerate(self.PB):
-            if not j:
-                continue
+            print(i, j)
             line = str(i) + '\t' + j + '\n'
             f.write(line)
         f.close()

@@ -45,7 +45,8 @@ class SymbolTable:
                 if self.symbol_table[j].lexeme == LA:
                     return self.symbol_table[j].address
             end = self.scope_stack.get_element(i)
+
         return None
 
     def end_scope(self):  # should be called after function finishes
-        self.symbol_table.pop(1)
+        self.scope_stack.pop(1)
